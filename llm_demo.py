@@ -7,7 +7,6 @@ be sure to pip install -r requirements.txt,
 and also supply a .env file with your OpenAI API key
 '''
 load_dotenv()
-context= "" #<------notice this is empty. keep this in mind for later
 def llm_query(context): 
     client = OpenAI( #client object, handles api requests
         api_key=os.environ.get("OPENAI_API_KEY"),
