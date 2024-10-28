@@ -1,6 +1,5 @@
-const token = process.argv.includes("--test") ? process.env.test_token : process.env.token;
-
-const { Client, IntentsBitField } = require('discord.js');
+require('dotenv').config();
+const { Client, IntentsBitField, REST, Routes } = require('discord.js');
 
 const client = new Client({
     intents: [
@@ -10,6 +9,13 @@ const client = new Client({
         IntentsBitField.Flags.MessageContent,
     ],
 });
+// below makes sure the bot works properly, can be removed when we start implementing
+client.on('interactionCreate', (interaction) => {
+    if (!interaction.isChatInputCommand()) return;
 
-client.login(token);
+    if (interaction.commandName === 'ping') {
+        interaction.reply('pong');
+    }
+});
 
+client.login(process.env.TOKEN);
