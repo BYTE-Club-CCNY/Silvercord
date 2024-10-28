@@ -13,11 +13,15 @@ Initialize your NPM environment: </br>
 ```npm install``` </br>
 Add token: </br>
 Make sure you have the Discord token or request it, and export into your env: </br>
-```export token='[put_your_token_here]'```
+```export token='[put_your_token_here]'```</br>
 Run the bot: </br>
-```nodemon```
-If it is unable to run nodemon, try `npm install -g nodemon`, and let me know if this happened so I can add this in! But it shouldn't be needed.
+```nodemon```</br>
 
+
+If it is unable to run nodemon </br>
+For windows: `npm install -g nodemon`, </br>
+For MacOS/Linux: `sudo npm install -g nodemon`, </br>
+Let me know if this happened so I can add this in! But it shouldn't be needed.
 
 # Use Cases
 
