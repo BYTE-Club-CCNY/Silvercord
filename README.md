@@ -9,7 +9,15 @@ Many students including new-comers tend to have many important questions about t
 in one place not only for information, but to be interactive and capable of having a discussion about such a topic. 
 
 # Setting Up
-Coming Soon
+Initialize your NPM environment: </br>
+```npm install``` </br>
+Add token: </br>
+Make sure you have the Discord token or request it, and export into your env: </br>
+```export token='[put_your_token_here]'```
+Run the bot: </br>
+```nodemon```
+If it is unable to run nodemon, try `npm install -g nodemon`, and let me know if this happened so I can add this in! But it shouldn't be needed.
+
 
 # Use Cases
 
