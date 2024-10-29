@@ -8,25 +8,16 @@ Coming Soon
 Many students including new-comers tend to have many important questions about the school's academics. Despite the information being searchable online, it would be easier to have everything about each school stored
 in one place not only for information, but to be interactive and capable of having a discussion about such a topic. 
 
-## Setting Up
-Initialize your NPM environment:  
+# Setting Up
+Initialize your NPM environment: </br>
 ```bash
 npm install
-```  
-
-Add token:
-Make sure you have the Discord token or request it, and export into your env: 
-```bash
-export TOKEN='<token>'
-```
-Run the bot: 
-```bash
-nodemon
-```
+``` </br>
+Make sure before running, you have received the .env file and placed it into your Silvercord directory. </br>
 
 Nodemon is a separate package that mnust be installed globally.
 
-For windows the follwing command should work:
+For Windows the following command should work:
 ```bash
 npm install -g nodemon
 ``` 
@@ -34,7 +25,10 @@ For MacOS/Linux the following command should work:
 ```bash
 sudo npm install -g nodemon
 ``` 
-Let me know if this happened so I can add this in! But it shouldn't be needed.
+Run the bot: </br>
+```bash
+nodemon
+```</br>
 
 ### Setting Up (adv)
 While I put advance in the title, it's not really that advanced. I have created a flake.nix file that contains all the packages, and even exports the token for you. You can download the Nix package manager and run the following command to install all the dependencies: 
