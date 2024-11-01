@@ -12,10 +12,10 @@ in one place not only for information, but to be interactive and capable of havi
 Initialize your NPM environment: </br>
 ```bash
 npm install
-``` </br>
+```
 Make sure before running, you have received the .env file and placed it into your Silvercord directory. </br>
 
-Nodemon is a separate package that mnust be installed globally.
+Nodemon is a separate package that must be installed globally.
 
 For Windows the following command should work:
 ```bash
@@ -28,7 +28,7 @@ sudo npm install -g nodemon
 Run the bot: </br>
 ```bash
 nodemon
-```</br>
+```
 
 ### Setting Up (adv)
 While I put advance in the title, it's not really that advanced. I have created a flake.nix file that contains all the packages, and even exports the token for you. You can download the Nix package manager and run the following command to install all the dependencies: 
