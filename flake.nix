@@ -29,6 +29,7 @@
           python312Packages.sniffio
           python312Packages.tqdm
           python312Packages.typing-extensions
+          python312Packages.beautifulsoup4
           # python312Packages.playwright
           python312Packages.requests
           nodejs_22
@@ -36,8 +37,8 @@
           # # playwright packages
           # playwright-driver.browsers
         ];
-        shellHook = "	
-          source \"$PWD/.env\" || exit 1 ";
+#         shellHook = "	
+#          source \"$PWD/.env\" || exit 1 ";
       };
     };
 }
