@@ -1,14 +1,19 @@
 import bs4
+import os
 from langchain_chroma import Chroma
+from langchain_openai import OpenAIEmbeddings
 from langchain_community.document_loaders import WebBaseLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_ollama import OllamaEmbeddings
+from dotenv import load_dotenv
 
+load_dotenv()
+OPEN_AI_KEY = os.getenv('OPEN_AI_KEY')
 url = "https://www.ratemyprofessors.com/professor/432142"
 CHROMA_PATH = "chroma"
 
-embed=OllamaEmbeddings(
-    model="gemma2"
+embed = OpenAIEmbeddings(
+    api_key=OPEN_AI_KEY,
+    model="text-embedding-3-large"
 )
 
 def pipeline(url):
