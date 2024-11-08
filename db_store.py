@@ -1,5 +1,8 @@
 import bs4
+import sys
 import os
+os.environ['USER_AGENT'] = 'myagent'
+import requests
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.document_loaders import WebBaseLoader
@@ -7,10 +10,9 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from dotenv import load_dotenv
 
 load_dotenv()
-OPEN_AI_KEY = os.getenv('OPEN_AI_KEY')
-url = "https://www.ratemyprofessors.com/professor/432142"
+url = "https://www.ratemyprofessors.com/professor/2946510"
 CHROMA_PATH = "chroma"
-
+OPEN_AI_KEY = os.getenv('OPEN_AI_KEY')
 embed = OpenAIEmbeddings(
     api_key=OPEN_AI_KEY,
     model="text-embedding-3-large"
@@ -20,8 +22,11 @@ def pipeline(url):
     import asyncio
     documents = asyncio.run(load_docs(url))
     chunks = split_text(documents)
-    chroma_store(chunks)
-
+    try:    
+        chroma_store(chunks)
+        print("ChromaDB Store Successful!")
+    except Exception as e:
+        print("Error occurred when vector storing: ", e)
 async def load_docs(url):
     loader = WebBaseLoader(web_paths=[url])
     docs = []
@@ -37,10 +42,11 @@ def split_text(documents: list):
         length_function=len,
     )
     chunks = text_splitter.split_documents(documents)
-    document = chunks[10]
-    print(document.page_content)
-    print("<------------------------------>\n")
-    print(document.metadata) # note that this stores the actual url as source
+    chunk_size = len(chunks)-1
+    document = chunks[chunk_size]
+    #print(document.page_content)
+    #print("<------------------------------>\n")
+    #print(document.metadata) # note that this stores the actual url as source
     return chunks
 
 def chroma_store(chunks: list):
@@ -52,8 +58,8 @@ def chroma_store(chunks: list):
     texts = [chunk.page_content for chunk in chunks]
     metadatas = [chunk.metadata for chunk in chunks]
     db.add_texts(texts=texts, metadatas=metadatas)
-    print("#3")
-    print(f"Saved {len(chunks)} chunks to {CHROMA_PATH}.")
+    #print(f"Saved {len(chunks)} chunks to {CHROMA_PATH}.")
 
 if __name__ == "__main__":
+    url = sys.argv[1] if len(sys.argv) > 1 else "default_url"
     pipeline(url)
