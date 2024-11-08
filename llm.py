@@ -68,7 +68,9 @@ def build_rag_chain(api_key):
     qna_chain = create_stuff_documents_chain(model, full_prompt)
     rag_chain = create_retrieval_chain(history_aware_retriever, qna_chain)
     return rag_chain
-def chat():
+
+
+def chat(): # this is for personal testing with the LLM
     print("Start asking about professors at CCNY")
     chat_history = []
 
@@ -81,5 +83,18 @@ def chat():
         print(f"AI: {result['answer']}")
         chat_history.append(HumanMessage(content=query))
         chat_history.append(SystemMessage(content=result["answer"]))
+
+
+def process_query(prof_name):
+    rag_chain = build_rag_chain(API_KEY)
+    user_prompt = f"How is Professor {prof_name}'s course?"
+    history = []
+    result = rag_chain.invoke({"input": user_prompt, "chat_history": history})
+    answer = result.get("answer", "No response available")
+    return answer
+
 if __name__ == "__main__":
-    chat()
+    import sys
+    profName = sys.argv[1] if len(sys.argv) > 1 else "Unknown"
+    response = process_query(profName)
+    print(f"```{response}```")
