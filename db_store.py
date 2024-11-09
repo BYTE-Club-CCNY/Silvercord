@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from backend.rmp import get_professor_url
 
 load_dotenv()
-url = "https://www.ratemyprofessors.com/professor/2946510"
+
 CHROMA_PATH = "chroma"
 OPEN_AI_KEY = os.getenv('OPEN_AI_KEY')
 embed = OpenAIEmbeddings(
@@ -19,15 +19,19 @@ embed = OpenAIEmbeddings(
     model="text-embedding-3-large"
 )
 
+url1 = "https://www.ratemyprofessors.com/professor/2380866" 
+
 def pipeline(url):
     import asyncio
     documents = asyncio.run(load_docs(url))
     chunks = split_text(documents)
+    # print(f"{chunks=}")
     try:    
         chroma_store(chunks)
         print("ChromaDB Store Successful!")
     except Exception as e:
         print("Error occurred when vector storing: ", e)
+        
 async def load_docs(url):
     loader = WebBaseLoader(web_paths=[url])
     docs = []
@@ -58,6 +62,8 @@ def chroma_store(chunks: list):
     )
     texts = [chunk.page_content for chunk in chunks]
     metadatas = [chunk.metadata for chunk in chunks]
+    # print(f"{texts=}")
+    # print(f"{metadatas=}")
     db.add_texts(texts=texts, metadatas=metadatas)
     #print(f"Saved {len(chunks)} chunks to {CHROMA_PATH}.")
 

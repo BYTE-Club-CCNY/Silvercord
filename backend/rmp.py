@@ -5,10 +5,10 @@ def get_professor_url(name: str) -> str:
     professors = get_professors_by_school_and_name(ccny, name)
     if not professors:
         return None
-    print(professors[0])
+    # print(professors[0])
     return_url = f"https://www.ratemyprofessors.com/professor/{professors[0].id}"
-    print(return_url)
-    
-    
+    # print(return_url)
+    return return_url
+
 if __name__ == "__main__":
-    get_professor_url("grimmelmann")
+    print(get_professor_url("abrar"))
