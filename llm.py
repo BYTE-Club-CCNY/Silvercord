@@ -14,6 +14,9 @@ load_dotenv()
 API_KEY = os.getenv("OPEN_AI_KEY")
 CHROMA_PATH = "chroma"
 
+# below is the RAG chain
+# we must initialize the embedding func, read the DB, init the retriever and model that we work with on the client end
+# build context + chat history + retriever + prompt -> RAG CHAIN
 def build_rag_chain(api_key):
     embed = OpenAIEmbeddings(
         api_key=api_key,
@@ -72,21 +75,6 @@ def build_rag_chain(api_key):
     return rag_chain
 
 
-def chat(): # this is for personal testing with the LLM
-    print("Start asking about professors at CCNY")
-    chat_history = []
-
-    while True:
-        query = input("You: ")
-        if query.lower() == "exit":
-            break
-        rag_chain = build_rag_chain(API_KEY)
-        result = rag_chain.invoke({"input": query, "chat_history": chat_history})
-        print(f"AI: {result['answer']}")
-        chat_history.append(HumanMessage(content=query))
-        chat_history.append(SystemMessage(content=result["answer"]))
-
-
 def process_query(prof_name):
     rag_chain = build_rag_chain(API_KEY)
     user_prompt = f"How is Professor {prof_name}'s course?"
@@ -95,6 +83,12 @@ def process_query(prof_name):
     answer = result.get("answer", "No response available")
     return answer
 
+
+# below can be used for personal use for testing AND by the discord bot
+# works almost just like the db_store.py function for ChromaDB
+# takes argument for prof name, and does vector lookup into our chromadb
+# example: python llm.py Troeger
+# searches for Troeger in the DB, get relevant docs with the retriever, then creates a relevant response
 if __name__ == "__main__":
     import sys
     profName = sys.argv[1] if len(sys.argv) > 1 else "Unknown"

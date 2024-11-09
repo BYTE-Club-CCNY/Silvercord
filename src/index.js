@@ -46,22 +46,23 @@ client.once('ready', async () => {
     }
 });
 
-// class command
+// '/class' command -> authored by jaynopponep
 client.on('interactionCreate', async (interaction) => {
-    if (!interaction.isChatInputCommand()) return;
+    if (!interaction.isChatInputCommand()) return; // <- just checks if the interaction is a slash command 
 
     if (interaction.commandName === 'class') {
-        const profName = interaction.options.getString('professor');
+        const profName = interaction.options.getString('professor'); // gets professor parameter
 
-        await interaction.deferReply();
+        await interaction.deferReply(); // makes it to extend runtime because client must await LLM response
 
         const pythonScriptPath = path.resolve(__dirname, '../llm.py');
 
-        execFile('python', [pythonScriptPath, profName], (error, stdout, stderr) => {
+        execFile('python', [pythonScriptPath, profName], (error, stdout, stderr) => { // using the child_process to run Python func for LLM within here
+			// below is just some error handling
             if (error) {
                 console.error("Error running LLM:", error);
                 interaction.followUp(`Failed to get information about Professor ${profName}.`);
-                return;
+                return
             }
 
             if (stderr) {
@@ -69,7 +70,7 @@ client.on('interactionCreate', async (interaction) => {
                 interaction.followUp(`Could not retrieve information about Professor ${profName}.`);
                 return;
             }
-
+			// sets up and replies with the response:
             const response = stdout.trim();
             interaction.followUp(response);
         });

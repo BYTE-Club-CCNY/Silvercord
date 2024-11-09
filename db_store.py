@@ -9,8 +9,8 @@ from langchain_community.document_loaders import WebBaseLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from dotenv import load_dotenv
 
+# basic configuration with LLM, chromadb, langchain
 load_dotenv()
-url = "https://www.ratemyprofessors.com/professor/2946510"
 CHROMA_PATH = "chroma"
 OPEN_AI_KEY = os.getenv('OPEN_AI_KEY')
 embed = OpenAIEmbeddings(
@@ -18,6 +18,13 @@ embed = OpenAIEmbeddings(
     model="text-embedding-3-large"
 )
 
+
+# pipeline function that simply takes url as data and stores content into chroma for vector searching for the LLM
+# if you're not familiar with building RAGs, the pipeline is as follows:
+  # 1. load documents (whichever type)
+  # 2. split text into multiple chunks for storing into ChromaDB
+  # 3. create a new collection with the LLM embedding function
+  # 4. store the text & metadata collected from the embedded docs into chromaDB for LLM lookup 
 def pipeline(url):
     import asyncio
     documents = asyncio.run(load_docs(url))
@@ -60,6 +67,10 @@ def chroma_store(chunks: list):
     db.add_texts(texts=texts, metadatas=metadatas)
     #print(f"Saved {len(chunks)} chunks to {CHROMA_PATH}.")
 
+# below defines the specification:
+# arguments are taken by sys.argvs in terminal
+# example is: python db_store.py https://www.ratemyprofessors.com/professor/432142
+# above would process the parameter link as the url for chroma storing
 if __name__ == "__main__":
     url = sys.argv[1] if len(sys.argv) > 1 else "default_url"
     pipeline(url)
