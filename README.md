@@ -35,7 +35,7 @@ While I put advance in the title, it's not really that advanced. I have created 
 ```bash
 nix develop
 ```
-This will install all deppendencies (python and nodejs), leaving you in a preconfigured shell that is guaranteed to work with the project on any machine. Check out [this](https://nix.dev/install-nix) link for more information on how to get started with Nix.
+This will install all dependencies (python and nodejs), leaving you in a preconfigured shell that is guaranteed to work with the project on any machine. Check out [this](https://nix.dev/install-nix) link for more information on how to get started with Nix.
 
 ## Use Cases
 
