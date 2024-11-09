@@ -1,18 +1,14 @@
-import ratemyprofessor
-# from beautifulsoup4 import BeautifulSoup
+from ratemyprofessor import School, get_professor_by_school_and_name, get_professors_by_school_and_name
 
-CCNY_ID = 224
-
-school = ratemyprofessor.get_school_by_name('The City College of New York')
-print(school.__dict__)
-professor = ratemyprofessor.get_professor_by_school_and_name(school, 'Troeger')
-
-if professor is not None:
-    print("%sworks in the %s Department of %s." % (professor.name, professor.department, professor.school.name))
-    print("Rating: %s / 5.0" % professor.rating)
-    print("Difficulty: %s / 5.0" % professor.difficulty)
-    print("Total Ratings: %s" % professor.num_ratings)
-    if professor.would_take_again is not None:
-        print(("Would Take Again: %s" % round(professor.would_take_again, 1)) + '%')
-    else:
-        print("Would Take Again: N/A")
+def get_professor_url(name: str) -> str:
+    ccny = School(224)
+    professors = get_professors_by_school_and_name(ccny, name)
+    if not professors:
+        return None
+    print(professors[0])
+    return_url = f"https://www.ratemyprofessors.com/professor/{professors[0].id}"
+    print(return_url)
+    
+    
+if __name__ == "__main__":
+    get_professor_url("grimmelmann")

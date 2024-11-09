@@ -8,6 +8,7 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_community.document_loaders import WebBaseLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from dotenv import load_dotenv
+from backend.rmp import get_professor_url
 
 load_dotenv()
 url = "https://www.ratemyprofessors.com/professor/2946510"

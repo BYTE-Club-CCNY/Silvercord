@@ -6,6 +6,7 @@ from langchain_anthropic import ChatAnthropic
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.chains.combine_documents import create_stuff_documents_chain
+from backend.rmp import get_professor_url
 # for chatting testing:
 from langchain_core.messages import HumanMessage, SystemMessage
 
