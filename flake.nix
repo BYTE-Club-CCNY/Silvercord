@@ -11,7 +11,7 @@
       self = python;
       packageOverrides = pyfinal: pyprev: {
         langchain_anthropic = pyfinal.callPackage ./langchain-anthropic.nix {defusedxml = pyfinal.callPackage ./defusedxml.nix {} ;};
-        
+        ratemyprofessor = pyfinal.callPackage ./ratemyprofessor.nix {};
       };
     };
   in {
@@ -37,14 +37,18 @@
         python312Packages.tqdm
         python312Packages.typing-extensions
         python312Packages.beautifulsoup4
-        python312Packages.langchain-openai
         python312Packages.langchain
+        python312Packages.langchain-community
+        python312Packages.langchain-openai
         python312Packages.langchain-chroma
         python312Packages.langchain-ollama
         python312Packages.requests
+	      python312Packages.anthropic
+	      python312Packages.openai
         (python.withPackages (python-pkgs: [
           # select Python packages here
           python-pkgs.langchain_anthropic
+          python-pkgs.ratemyprofessor
         ]))
         nodejs_22
         nodemon
