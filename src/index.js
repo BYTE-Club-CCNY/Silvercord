@@ -31,6 +31,8 @@ const commands = [
     },
 ];
 
+
+
 client.once('ready', async () => {
     console.log("Bot is ready. Registering slash commands...");
 
@@ -63,11 +65,12 @@ client.on('interactionCreate', async (interaction) => {
                 interaction.followUp(`Failed to get information about Professor ${profName}.`);
                 return;
             }
-
+            
+            // TODO: Handle stderr
             if (stderr) {
                 console.error("Python script stderr:", stderr);
-                interaction.followUp(`Could not retrieve information about Professor ${profName}.`);
-                return;
+                // interaction.followUp(`Could not retrieve information about Professor ${profName}.`);
+                // return;
             }
 
             const response = stdout.trim();
