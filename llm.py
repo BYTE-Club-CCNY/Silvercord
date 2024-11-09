@@ -26,7 +26,7 @@ def build_rag_chain(api_key):
     )
     retriever = db.as_retriever(
         search_type="similarity_score_threshold",
-        search_kwargs={"k": 6, "score_threshold": 0.45},
+        search_kwargs={"k": 8, "score_threshold": 0.35},
     )
     model = ChatAnthropic(
         model="claude-3-sonnet-20240229",
@@ -55,6 +55,8 @@ def build_rag_chain(api_key):
         "answer, just say that you do not know. Use 5 sentences "
         "maximum and keep the answer concise. Your answer must strictly "
         "be based on the data and context given to you. "
+        "Special case: If asked about Gertner in the context, try to talk like he does "
+        "in your response. Here's how he sounds like usually: zere iz alwayz another courze."
         "\n\n"
         "{context}"
     )

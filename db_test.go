@@ -15,6 +15,7 @@ func TestPipeline(t *testing.T) {
 		"https://www.ratemyprofessors.com/professor/422536",
 		"https://www.ratemyprofessors.com/professor/2818033",
 		"https://www.ratemyprofessors.com/professor/354797",
+		"https://www.ratemyprofessors.com/professor/489006",
 	}
 	expectedOutput := "ChromaDB Store Successful!"
 
