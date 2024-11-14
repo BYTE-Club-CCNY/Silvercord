@@ -13,10 +13,10 @@ const client = new Client({
 });
 
 const commands = [
-    {
+    /*{
         name: 'ping',
         description: 'replies with pongg',
-    },
+    },*/
     {
         name: 'class',
         description: 'Ask about a course based on professor name.',
@@ -25,6 +25,30 @@ const commands = [
                 name: 'professor',
                 type: 3, // STRING type for Discord
                 description: 'Professor Name',
+                required: true,
+            },
+        ],
+    },
+    {
+        name: 'break',
+        description: 'Ask about the academic breaks',
+        options: [
+            {
+                name: 'academic_calendar',
+                type: 3,
+                description: 'Breaks Info',
+                required: true,
+            },
+        ],
+    },
+    {
+        name: 'talktuah',
+        description: 'testing purposes',
+        options: [
+            {
+                name: 'talktuah',
+                type: 3,
+                description: 'testing because im confused how this works',
                 required: true,
             },
         ],
@@ -57,7 +81,7 @@ client.on('interactionCreate', async (interaction) => {
 
         const pythonScriptPath = path.resolve(__dirname, '../llm.py');
 
-        execFile('python', [pythonScriptPath, profName], (error, stdout, stderr) => { // using the child_process to run Python func for LLM within here
+        execFile('python3', [pythonScriptPath, profName], (error, stdout, stderr) => { // using the child_process to run Python func for LLM within here
 			// below is just some error handling
             if (error) {
                 console.error("Error running LLM:", error);
@@ -74,6 +98,11 @@ client.on('interactionCreate', async (interaction) => {
             const response = stdout.trim();
             interaction.followUp(response);
         });
+    }
+    
+    if (interaction.commandName === 'talktuah') {
+        await interaction.reply('testing');
+        return;
     }
 });
 
