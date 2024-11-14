@@ -1,14 +1,35 @@
-from ratemyprofessor import School, get_professor_by_school_and_name, get_professors_by_school_and_name
+from ratemyprofessor import School, Professor
+import requests
+import bs4 as bs
+import re
 
-def get_professor_url(name: str) -> str:
-    ccny = School(224)
-    professors = get_professors_by_school_and_name(ccny, name)
-    if not professors:
+college = School(224)
+
+def query_rmp(professor_name: str) -> bool | list:
+    url = 'https://www.ratemyprofessors.com/search/professors/%s?q=%s' % (college.id, professor_name)
+    response = requests.get(url)
+    soup = bs.BeautifulSoup(response.text, 'html.parser')
+    headerDiv: bs.Tag = soup.find('div', {'data-testid': 'search-results-header'})
+    queryText = headerDiv.get_text()
+    
+    if "No professors with" in queryText:
+        return False
+    else:
+        professors_list = []
+        profs = re.findall(r'"legacyId":(\d+)', response.text)
+        for professor_data in profs:
+            try:
+                professors_list.append(Professor(int(professor_data)))
+            except ValueError:
+                pass
+        return professors_list
+
+def get_professor_url(professor_name: str) -> str | None:
+    if result := query_rmp(professor_name):
+        return f"https://www.ratemyprofessors.com/professor/{result[0].id}"
+    else:
         return None
-    # print(professors[0])
-    return_url = f"https://www.ratemyprofessors.com/professor/{professors[0].id}"
-    # print(return_url)
-    return return_url
 
 if __name__ == "__main__":
-    print(get_professor_url("abrar"))
+    print(get_professor_url("Erik"))
+    print(get_professor_url("Abrar"))
