@@ -116,7 +116,10 @@ def process_query(prof_name):
 if __name__ == "__main__":
     import sys
     profName = sys.argv[1] if len(sys.argv) > 1 else "Unknown"
-    
-    pipeline(get_professor_url(profName))
-    response = process_query(profName)
-    print(f"```{response}```")
+    url = get_professor_url(profName)
+    if url:    
+        pipeline(url)
+        response = process_query(profName)
+        print(f"```{response}```")
+    else:
+        print("No professor found with that name.")

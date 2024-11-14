@@ -26,9 +26,12 @@ def pipeline(url):
     documents = asyncio.run(load_docs(url))
     chunks = split_text(documents)
     # print(f"{chunks=}")
+    # gotta be a better way of handling this exception !!
     try:    
-        chroma_store(chunks)
-        print("ChromaDB Store Successful!")
+        if chroma_store(chunks, url):
+            print("ChromaDB Store Successful!")
+        else:
+            print("Nothing was stored.")
     except Exception as e:
         print("Error occurred when vector storing: ", e)
         
@@ -54,7 +57,7 @@ def split_text(documents: list):
     #print(document.metadata) # note that this stores the actual url as source
     return chunks
 
-def chroma_store(chunks: list):
+def chroma_store(chunks: list, url: str):
     db = Chroma(
         collection_name="silvercord",
         embedding_function=embed,
@@ -64,7 +67,14 @@ def chroma_store(chunks: list):
     metadatas = [chunk.metadata for chunk in chunks]
     # print(f"{texts=}")
     # print(f"{metadatas=}")
-    db.add_texts(texts=texts, metadatas=metadatas)
+    # query the db with the url
+    # if it exists, don't update, but if it doesn't exist, add it
+    if db.get(include=["metadatas"], where={"source": url}):
+        print(f"URL: {url} already exists in the database.")
+        return False
+    else:
+        db.add_texts(texts=texts, metadatas=metadatas)
+        return True
     #print(f"Saved {len(chunks)} chunks to {CHROMA_PATH}.")
 
 if __name__ == "__main__":
