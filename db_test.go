@@ -7,6 +7,8 @@ import (
 	"fmt"
 )
 
+// below is a test for 7 rate my professor links to make sure that the pipeline works correctly. 
+// see TESTING.md for more instructions
 func TestPipeline(t *testing.T) {
 	urls := []string{
 		"https://www.ratemyprofessors.com/professor/2946510",
@@ -15,6 +17,7 @@ func TestPipeline(t *testing.T) {
 		"https://www.ratemyprofessors.com/professor/422536",
 		"https://www.ratemyprofessors.com/professor/2818033",
 		"https://www.ratemyprofessors.com/professor/354797",
+		"https://www.ratemyprofessors.com/professor/489006",
 	}
 	expectedOutput := "ChromaDB Store Successful!"
 
