@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const path = require('node:path');
 const { execFile } = require('child_process');
 
@@ -35,14 +35,15 @@ module.exports = {
             
             const {name, link, response} = JSON.parse(stdout.trim());
             // console.log(`Professor: ${name}, Link: ${link}, Response: ${response}`);
+            const file = new AttachmentBuilder("./src/assets/chicken.png");
             embed = new EmbedBuilder()
                 .setColor('#0099ff')
                 .setTitle(name)
                 .setURL(link)
                 .setDescription(response)
-                .setThumbnail("https://imgur.com/a/PPoKH7u");
+                .setThumbnail("attachment://chicken.png");
 
-            interaction.followUp({embeds: [ embed ] });
+            interaction.followUp({embeds: [ embed ], files: [ file ] });
         });
     }
 };
