@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const path = require('node:path');
 const { execFile } = require('child_process');
 
@@ -32,9 +32,17 @@ module.exports = {
                 // interaction.followUp(`Could not retrieve information about Professor ${profName}.`);
                 // return;
             }
+            
+            const {name, link, response} = JSON.parse(stdout.trim());
+            // console.log(`Professor: ${name}, Link: ${link}, Response: ${response}`);
+            embed = new EmbedBuilder()
+                .setColor('#0099ff')
+                .setTitle(name)
+                .setURL(link)
+                .setDescription(response)
+                .setThumbnail("https://imgur.com/a/PPoKH7u");
 
-            const response = stdout.trim();
-            interaction.followUp(response);
+            interaction.followUp({embeds: [ embed ] });
         });
     }
 };
