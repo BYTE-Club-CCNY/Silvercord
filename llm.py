@@ -1,4 +1,5 @@
 import os
+import json
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings
 from langchain_chroma import Chroma
@@ -6,6 +7,8 @@ from langchain_anthropic import ChatAnthropic
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.chains.combine_documents import create_stuff_documents_chain
+from rmp import get_professor_url
+from db_store import pipeline
 # for chatting testing:
 from langchain_core.messages import HumanMessage, SystemMessage
 
@@ -92,5 +95,16 @@ def process_query(prof_name):
 if __name__ == "__main__":
     import sys
     profName = sys.argv[1] if len(sys.argv) > 1 else "Unknown"
-    response = process_query(profName)
-    print(f"```{response}```")
+    url = get_professor_url(profName)
+    if url:    
+        pipeline(url)
+        response = process_query(profName)
+        ret = json.dumps({
+            "name": profName,
+            "link": url,
+            "response": response
+        }, ensure_ascii=False, indent=4)
+        # print(f"Link: {url} ```{response}```")
+        print(ret)
+    else:
+        print("No professor found with that name. Please try again.")
