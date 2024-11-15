@@ -1,4 +1,5 @@
 import os
+import json
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings
 from langchain_chroma import Chroma
@@ -67,24 +68,6 @@ def build_rag_chain(api_key):
             ("human", "{input}"),
         ]
     )
-    # do check to see if url is in db
-    # Fetch all documents in the database (adjust parameters as needed)
-    query_results = db.get(include=["metadatas"], where={"source": get_professor_url(profName)})  # Ensure this fetches all docs, or use pagination if the db is large
-
-    # Define the specific metadata key-value pair to search for
-    # target_source = "https://www.ratemyprofessors.com/professor/432142"
-
-    # Check if any document in all_documents matches the target metadata pair
-    # matching_docs = [doc for doc in all_documents if doc.metadata.get("source") == target_source]
-    
-    print(f"{query_results=}")
-
-    # if matching_docs:
-    #     print("Document with the specified source exists.")
-    #     # Take action based on found documents
-    # else:
-    #     print("No document found with the specified source.")
-
     qna_chain = create_stuff_documents_chain(model, full_prompt)
     rag_chain = create_retrieval_chain(history_aware_retriever, qna_chain)
     return rag_chain
@@ -120,6 +103,12 @@ if __name__ == "__main__":
     if url:    
         pipeline(url)
         response = process_query(profName)
-        print(f"```{response}```")
+        ret = json.dumps({
+            "name": profName,
+            "link": url,
+            "response": response
+        }, ensure_ascii=False, indent=4)
+        # print(f"Link: {url} ```{response}```")
+        print(ret)
     else:
-        print("No professor found with that name.")
+        print("No professor found with that name. Please try again.")

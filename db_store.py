@@ -19,7 +19,7 @@ embed = OpenAIEmbeddings(
     model="text-embedding-3-large"
 )
 
-url1 = "https://www.ratemyprofessors.com/professor/2380866" 
+# url1 = "https://www.ratemyprofessors.com/professor/2380866" 
 
 def pipeline(url):
     import asyncio
@@ -28,10 +28,7 @@ def pipeline(url):
     # print(f"{chunks=}")
     # gotta be a better way of handling this exception !!
     try:    
-        if chroma_store(chunks, url):
-            print("ChromaDB Store Successful!")
-        else:
-            print("Nothing was stored.")
+        chroma_store(chunks, url)
     except Exception as e:
         print("Error occurred when vector storing: ", e)
         
@@ -63,19 +60,17 @@ def chroma_store(chunks: list, url: str):
         embedding_function=embed,
         persist_directory=CHROMA_PATH
     )
-    texts = [chunk.page_content for chunk in chunks]
-    metadatas = [chunk.metadata for chunk in chunks]
-    # print(f"{texts=}")
-    # print(f"{metadatas=}")
-    # query the db with the url
-    # if it exists, don't update, but if it doesn't exist, add it
-    if db.get(include=["metadatas"], where={"source": url}):
-        print(f"URL: {url} already exists in the database.")
+    query = db.get(include=["metadatas"], where={"source": url})
+    if query["metadatas"]:
+        # print(f"URL: {url} already exists in the database.")
+        # print(f"Query: {query}")
         return False
     else:
+        texts = [chunk.page_content for chunk in chunks]
+        metadatas = [chunk.metadata for chunk in chunks]
         db.add_texts(texts=texts, metadatas=metadatas)
+        print(f"Saved {len(chunks)} chunks to {CHROMA_PATH}.")
         return True
-    #print(f"Saved {len(chunks)} chunks to {CHROMA_PATH}.")
 
 if __name__ == "__main__":
     url = sys.argv[1] if len(sys.argv) > 1 else "default_url"
