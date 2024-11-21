@@ -25,6 +25,10 @@ For MacOS/Linux the following command should work:
 ```bash
 sudo npm install -g nodemon
 ``` 
+Make sure to SYNC commands, especially after new implementation
+```bash
+node src/deploy_commands.js
+```
 Run the bot: </br>
 ```bash
 nodemon
