@@ -2,14 +2,12 @@ import bs4
 import sys
 import os
 os.environ['USER_AGENT'] = 'myagent'
-import requests
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.document_loaders import WebBaseLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from dotenv import load_dotenv
 from rmp import get_professor_url
-
 # basic configuration with LLM, chromadb, langchain
 load_dotenv()
 CHROMA_PATH = "chroma"
@@ -32,7 +30,7 @@ def pipeline(url):
     chunks = split_text(documents)
     # print(f"{chunks=}")
     # gotta be a better way of handling this exception !!
-    try:    
+    try:
         chroma_store(chunks, url)
     except Exception as e:
         print("Error occurred when vector storing: ", e)

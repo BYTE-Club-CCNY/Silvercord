@@ -82,7 +82,7 @@ def process_query(prof_name):
     rag_chain = build_rag_chain(API_KEY)
     user_prompt = f"How is Professor {prof_name}'s course?"
     history = []
-    result = rag_chain.invoke({"input": user_prompt, "chat_history": history})
+    result = rag_chain.invoke({"input": user_prompt, "chat_history": history})  # here
     answer = result.get("answer", "No response available")
     return answer
 
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     import sys
     profName = sys.argv[1] if len(sys.argv) > 1 else "Unknown"
     url = get_professor_url(profName)
-    if url:    
+    if url:
         pipeline(url)
         response = process_query(profName)
         ret = json.dumps({
