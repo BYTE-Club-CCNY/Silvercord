@@ -55,6 +55,23 @@ async function get_score(server_id, user_id) {
     return get_score_res.Item?.score?.N ? parseInt(get_score_res.Item.score.N, 10) : 0;
 }
 
+async function get_username(server_id, user_id) {
+    const get_score = {
+        "Key": {
+            "server_id": {
+                "S": server_id 
+            },
+            "user_id": {
+                "S": user_id 
+            },
+        },
+        "TableName": "leetboard"
+    };
+    const command = new GetItemCommand(get_score);
+    const get_username = await client.send(command);
+    return get_username.Item?.username?.S ? get_username.Item.username.S : null;
+}
+
 async function update_score(server_id, user_id, score) {
     // doesn't need to return anything; sort of an in-place function
     const update_score = {
@@ -75,4 +92,4 @@ async function update_score(server_id, user_id, score) {
     const res = await client.send(command);
 }
 
-module.exports = { get_score, update_score, add_problem };
+module.exports = { get_score, update_score, add_problem, get_username };

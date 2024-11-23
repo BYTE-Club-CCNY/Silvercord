@@ -1,8 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { DynamoDBClient, GetItemCommand, PutItemCommand, UpdateItemCommand } = require("@aws-sdk/client-dynamodb");
 const { get_difficulty, extractProblem } = require('../../../helper');
 const { get_score, update_score, add_problem } = require('../../../dynamo_helper');
-const { dynamoConfig } = require('../../../aws-config');
 const path = require('node:path');
 
 

@@ -5,3 +5,4 @@ node_modules
 go.mod
 go.sum
 __pycache__
+.DS_Store
