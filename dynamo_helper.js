@@ -92,4 +92,34 @@ async function update_score(server_id, user_id, score) {
     const res = await client.send(command);
 }
 
-module.exports = { get_score, update_score, add_problem, get_username };
+async function register_lc(server_id, user_id, username) {
+    // returns true to ensure successfully registered 
+    try {
+        const register_lc = {
+            "Key": {
+                "server_id": {
+                    "S": server_id
+                },
+                "user_id": {
+                    "S": user_id
+                }
+            },
+            "ExpressionAttributeNames": {
+                "#username": "username"
+            },
+            "ExpressionAttributeValues": {
+                ":username": { "S": username }
+            },
+            "UpdateExpression": "SET #username = :username",
+            "TableName": "leetboard"
+        };
+        const command = new UpdateItemCommand(register_lc)
+        const res = await client.send(command);
+        return true;
+    } catch (error) {
+        console.error("Error registering user:", error);
+        return false;
+    }
+}
+
+module.exports = { get_score, update_score, add_problem, get_username, register_lc };
