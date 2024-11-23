@@ -1,4 +1,4 @@
-import { extractProblem, get_difficulty } from './helper.js';
+const { extractProblem, get_difficulty } = require('./helper');
 
 const testOne = "https://leetcode.com/problems/search-insert-position/submissions/1421477674/"
 const testTwo = "https://leetcode.com/problems/plus-one/submissions/1421458821/"

@@ -1,3 +1,4 @@
+const { REST, Routes } = require('discord.js');
 require('dotenv').config();
 const { Client, IntentsBitField, Collection, Events, GatewayIntentBits} = require('discord.js');
 const path = require('node:path');
