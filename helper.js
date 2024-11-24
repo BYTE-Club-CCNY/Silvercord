@@ -32,9 +32,11 @@ async function get_online_username(username) {
 
         if (response.ok) {
             const data = await response.json();
+            console.log(data);
             return data.data.matchedUser; 
         } else {
             const errorMsg = await response.text();
+            console.log(`Error occurred: ${errorMsg}`);
             return `Error occurred: ${errorMsg}`; 
         }
     } catch (error) {
@@ -49,12 +51,12 @@ async function get_difficulty(link) {
         const titleSlug = link.split('/problems/')[1].split('/')[0];
         const url = "https://leetcode.com/graphql";
         const query = `
-    query getProblemDetails($titleSlug: String!) {
-      question(titleSlug: $titleSlug) {
-        title
-        difficulty
-      }
-    }`;
+            query getProblemDetails($titleSlug: String!) {
+                question(titleSlug: $titleSlug) {
+                    title
+                    difficulty
+                }
+            }`;
         const vars = { titleSlug };
 
         const response = await fetch(url, {

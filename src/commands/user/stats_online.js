@@ -8,7 +8,6 @@ module.exports = {
 		.setName('stats_online')
 		.setDescription("View your personal online LeetCode stats"),
 
-
     async execute(interaction) {
         if (!interaction.isChatInputCommand()) return;
         server_id = interaction.guild.id;
@@ -24,13 +23,12 @@ module.exports = {
             console.log(data);
             if (!data || !data.submitStats || !Array.isArray(data.submitStats.acSubmissionNum)) {
                 await interaction.followUp(
-                    'Could not retrieve your LeetCode stats. Please make sure your username is correct!'
+                    `Could not retrieve ${username} LeetCode stats. Please make sure your username is correct!`
                 );
                 return;
             }
             const embed = new EmbedBuilder()
                 .setTitle(`${username}'s Leetcode Stats`)
-                .setDescription("")
                 .setColor("Random");
 
             console.log("Stats data:", data.submitStats.acSubmissionNum);
