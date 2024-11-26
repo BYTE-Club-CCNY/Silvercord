@@ -4,14 +4,18 @@
   "description": "Ask Silvercord anything about CUNY on your Discord server! Including: the academic schedule, upcoming or current professors, course material & how to best study for it, or upcoming courses to be opened or closed.",
   "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon",
+    "deploy": "node src/deploy_commands.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.699.0",
     "discord.js": "^14.16.3",
     "dotenv": "^16.4.5",
+    "node-fetch": "^3.3.2",
     "nodemon": "^3.1.7",
     "python-shell": "^5.0.0"
   }

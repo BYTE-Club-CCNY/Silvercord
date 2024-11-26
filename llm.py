@@ -1,4 +1,5 @@
 import os
+import json
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings
 from langchain_chroma import Chroma
@@ -6,6 +7,8 @@ from langchain_anthropic import ChatAnthropic
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.chains.combine_documents import create_stuff_documents_chain
+from rmp import get_professor_url
+from db_store import pipeline
 # for chatting testing:
 from langchain_core.messages import HumanMessage, SystemMessage
 
@@ -74,15 +77,16 @@ def build_rag_chain(api_key):
     rag_chain = create_retrieval_chain(history_aware_retriever, qna_chain)
     return rag_chain
 
-
-def process_query(prof_name):
+def process_query(command, query):
     rag_chain = build_rag_chain(API_KEY)
-    user_prompt = f"How is Professor {prof_name}'s course?"
+    if command == "professor":
+        user_prompt = f"How is Professor {query}'s course?"
+    else:
+        user_prompt = query
     history = []
-    result = rag_chain.invoke({"input": user_prompt, "chat_history": history})
+    result = rag_chain.invoke({"input": user_prompt, "chat_history": history})  # here
     answer = result.get("answer", "No response available")
     return answer
-
 
 # below can be used for personal use for testing AND by the discord bot
 # works almost just like the db_store.py function for ChromaDB
@@ -91,6 +95,34 @@ def process_query(prof_name):
 # searches for Troeger in the DB, get relevant docs with the retriever, then creates a relevant response
 if __name__ == "__main__":
     import sys
-    profName = sys.argv[1] if len(sys.argv) > 1 else "Unknown"
-    response = process_query(profName)
-    print(f"```{response}```")
+    if len(sys.argv) > 1:
+        command = sys.argv[1]
+    else:
+        command = "unknown"
+    if command == "professor":
+        profName = sys.argv[2]
+        url = get_professor_url(profName)
+        if url:
+            pipeline(url)
+            response = process_query(command, profName)
+            ret = json.dumps({
+                "name": profName,
+                "link": url,
+                "response": response
+            }, ensure_ascii=False, indent=4)
+            # print(f"Link: {url} ```{response}```")
+            print(ret)
+        else:
+            print(sys.argv[1])
+    elif command == "break":
+        query = " ".join(sys.argv[2:])
+        pipeline("https://www.cuny.edu/academics/academic-calendars/")
+        response = process_query(command, query)
+        ret = json.dumps({
+            "name": query,
+            "link": "https://www.cuny.edu/academics/academic-calendars/",
+            "response": response
+        }, ensure_ascii=False, indent=4)
+        print(ret)
+    else:
+        print("testing")
