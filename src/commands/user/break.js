@@ -18,8 +18,8 @@ module.exports = {
         await interaction.deferReply();
 
         const pythonScriptPath = path.resolve(__dirname, '../../../llm.py');
-
-        execFile('python3', [pythonScriptPath, query], (error, stdout, stderr) => {
+        const break_string = "break"
+        execFile('python3', [pythonScriptPath, break_string, query], (error, stdout, stderr) => {
             if (error) {
                 console.error("Error running LLM:", error);
                 interaction.followUp(`Failed to get information about ${query}.`);

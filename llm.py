@@ -20,7 +20,7 @@ CHROMA_PATH = "chroma"
 # below is the RAG chain
 # we must initialize the embedding func, read the DB, init the retriever and model that we work with on the client end
 # build context + chat history + retriever + prompt -> RAG CHAIN
-def build_rag_chain(api_key):
+def build_rag_chain(command, api_key):
     embed = OpenAIEmbeddings(
         api_key=api_key,
         model="text-embedding-3-large"
@@ -32,7 +32,7 @@ def build_rag_chain(api_key):
     )
     retriever = db.as_retriever(
         search_type="similarity_score_threshold",
-        search_kwargs={"k": 8, "score_threshold": 0.35},
+        search_kwargs={"k": 8, "score_threshold": 0.2},
     )
     model = ChatAnthropic(
         model="claude-3-sonnet-20240229",
@@ -54,18 +54,30 @@ def build_rag_chain(api_key):
     history_aware_retriever = create_history_aware_retriever(
         model, retriever, context_history
     )
-    query = (
-        "You are an assistant for question-answering tasks. "
-        "Use the given pieces of retrieved context to answer "
-        "the question given by the user. If you don't know the "
-        "answer, just say that you do not know. Use 5 sentences "
-        "maximum and keep the answer concise. Your answer must strictly "
-        "be based on the data and context given to you. "
-        "Special case: If asked about Gertner in the context, try to talk like he does "
-        "in your response. Here's how he sounds like usually: zere iz alwayz another courze."
-        "\n\n"
-        "{context}"
-    )
+    if command == "professor":
+        query = (
+            "You are an assistant for question-answering tasks. "
+            "Use the given pieces of retrieved context to answer "
+            "the question given by the user. If you don't know the "
+            "answer, just say that you do not know. Use 5 sentences "
+            "maximum and keep the answer concise. Your answer must strictly "
+            "be based on the data and context given to you. "
+            "Special case: If asked about Gertner in the context, try to talk like he does "
+            "in your response. Here's how he sounds like usually: zere iz alwayz another courze."
+            "\n\n"
+            "{context}"
+        )
+    else:
+        query = (
+            "You are an assistant for question-answering tasks."
+            "The context given is the schedule for this years academic "
+            "calendar. Base the answer to the question asked on the "
+            "academic calendar given to you relating to dates from 2024-2025"
+            "Answer concisely with a 1 sentence response."
+            "\n\n"
+            "{context}"
+        )
+    
     full_prompt = ChatPromptTemplate(
         [
             ("system", query),
@@ -73,12 +85,13 @@ def build_rag_chain(api_key):
             ("human", "{input}"),
         ]
     )
+
     qna_chain = create_stuff_documents_chain(model, full_prompt)
     rag_chain = create_retrieval_chain(history_aware_retriever, qna_chain)
     return rag_chain
 
 def process_query(command, query):
-    rag_chain = build_rag_chain(API_KEY)
+    rag_chain = build_rag_chain(command, API_KEY)
     if command == "professor":
         user_prompt = f"How is Professor {query}'s course?"
     else:
@@ -114,7 +127,7 @@ if __name__ == "__main__":
             print(ret)
         else:
             print(sys.argv[1])
-    elif command == "break":
+    else:
         query = " ".join(sys.argv[2:])
         pipeline("https://www.cuny.edu/academics/academic-calendars/")
         response = process_query(command, query)
@@ -124,5 +137,3 @@ if __name__ == "__main__":
             "response": response
         }, ensure_ascii=False, indent=4)
         print(ret)
-    else:
-        print("testing")
