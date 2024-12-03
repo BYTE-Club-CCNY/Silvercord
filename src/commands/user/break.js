@@ -5,24 +5,24 @@ const { execFile } = require('child_process');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('break')
-        .setDescription('Retrieves CUNY break info')
+        .setDescription('break information')
         .addStringOption(option => option
-            .setName('academic_calendar')
-            .setDescription('Breaks Info')
+            .setName('break')
+            .setDescription('Returns information about CUNYs academic calendar')
             .setRequired(true)),
         
     async execute(interaction) {
         if (!interaction.isChatInputCommand()) return;
-        const breakQuery = interaction.options.getString('query') ?? 'your query';
+        const query = interaction.options.getString('break') ?? 'No break provided';
 
         await interaction.deferReply();
 
         const pythonScriptPath = path.resolve(__dirname, '../../../llm.py');
 
-        execFile('python', [pythonScriptPath, breakQuery], (error, stdout, stderr) => {
+        execFile('python3', [pythonScriptPath, query], (error, stdout, stderr) => {
             if (error) {
                 console.error("Error running LLM:", error);
-                interaction.followUp(`Failed to get information about ${breakQuery}.`);
+                interaction.followUp(`Failed to get information about ${query}.`);
                 return;
             }
             
@@ -35,7 +35,7 @@ module.exports = {
             embed = new EmbedBuilder()
                 .setColor('#0099ff')
                 .setTitle(name)
-                .setURL("https://www.cuny.edu/academics/academic-calendars/")
+                .setURL(link)
                 .setDescription(response)
                 .setThumbnail("attachment://calendar.jpg");
 
