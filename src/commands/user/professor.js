@@ -19,6 +19,7 @@ module.exports = {
 
         const pythonScriptPath = path.resolve(__dirname, '../../../llm.py');
         const prof_string = "professor"
+        
         execFile('python', [pythonScriptPath, prof_string, profName], (error, stdout, stderr) => {
             if (error) {
                 console.error("Error running LLM:", error);
