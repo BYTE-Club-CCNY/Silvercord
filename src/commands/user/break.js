@@ -20,7 +20,7 @@ module.exports = {
         const pythonScriptPath = path.resolve(__dirname, '../../../llm.py');
         const break_string = "break"
 
-        execFile('python3', [pythonScriptPath, break_string, query], (error, stdout, stderr) => {
+        execFile('python', [pythonScriptPath, break_string, query], (error, stdout, stderr) => {
             if (error) {
                 console.error("Error running LLM:", error);
                 interaction.followUp(`Failed to get information about ${query}.`);

@@ -9,6 +9,7 @@ from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from rmp import get_professor_url
 from db_store import pipeline
+from datetime import datetime
 # for chatting testing:
 from langchain_core.messages import HumanMessage, SystemMessage
 
@@ -32,7 +33,7 @@ def build_rag_chain(command, api_key):
     )
     retriever = db.as_retriever(
         search_type="similarity_score_threshold",
-        search_kwargs={"k": 8, "score_threshold": 0.2},
+        search_kwargs={"k": 8, "score_threshold": 0.3},
     )
     model = ChatAnthropic(
         model="claude-3-sonnet-20240229",
@@ -59,7 +60,7 @@ def build_rag_chain(command, api_key):
             "You are an assistant for question-answering tasks. "
             "Use the given pieces of retrieved context to answer "
             "the question given by the user. If you don't know the "
-            "answer, just say that you do not know. Use 5 sentences "
+            "answer, just say that you do not know. Use 3 sentences "
             "maximum and keep the answer concise. Your answer must strictly "
             "be based on the data and context given to you. "
             "Special case: If asked about Gertner in the context, try to talk like he does "
@@ -68,13 +69,15 @@ def build_rag_chain(command, api_key):
             "{context}"
         )
     else:
+        current_date = datetime.now().date()
         query = (
-            "You are an assistant for question-answering tasks."
-            "The context given is the schedule for this years academic "
-            "calendar. Base the answer to the question asked on the "
-            "academic calendar given to you relating to dates from 2024-2025"
-            "Answer concisely with a 1 sentence response."
-            "\n\n"
+            f"You are an assistant for question-answering tasks."
+            f"The context given is the schedule for this years academic "
+            f"calendar. Base the answer to the question asked on the "
+            f"academic calendar given to you relating to dates from 2024-2025"
+            f"Note most importantly that today's date is {current_date}."
+            f"Answer concisely with a 1 sentence response."
+            f"\n\n"
             "{context}"
         )
     
