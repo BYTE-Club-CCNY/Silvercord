@@ -18,8 +18,9 @@ module.exports = {
         await interaction.deferReply();
 
         const pythonScriptPath = path.resolve(__dirname, '../../../llm.py');
-
-        execFile('python', [pythonScriptPath, profName], (error, stdout, stderr) => {
+        const prof_string = "professor"
+        
+        execFile('python', [pythonScriptPath, prof_string, profName], (error, stdout, stderr) => {
             if (error) {
                 console.error("Error running LLM:", error);
                 interaction.followUp(`Failed to get information about Professor ${profName}.`);
