@@ -72,7 +72,7 @@ def chroma_store(chunks: list, url: str):
         texts = [chunk.page_content for chunk in chunks]
         metadatas = [chunk.metadata for chunk in chunks]
         db.add_texts(texts=texts, metadatas=metadatas)
-        print(f"Saved {len(chunks)} chunks to {CHROMA_PATH}.")
+        # print(f"Saved {len(chunks)} chunks to {CHROMA_PATH}.")
         return True
 
 # below defines the specification:
