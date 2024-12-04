@@ -63,11 +63,11 @@ def build_rag_chain(command, api_key):
             "answer, just say that you do not know. Use 3 sentences "
             "maximum and keep the answer concise. Your answer must strictly "
             "be based on the data and context given to you. "
-            "Special case: If asked about Gertner in the context, try to talk like he does "
-            "in your response. Here's how he sounds like usually: zere iz alwayz another courze."
             "\n\n"
             "{context}"
         )
+        # "Special case: If asked about Gertner in the context, try to talk like he does "
+        # "in your response. Here's how he sounds like usually: zere iz alwayz another courze."
     else:
         current_date = datetime.now().date()
         query = (
