@@ -38,6 +38,26 @@ async function add_problem(server_id, user_id, link, problem) {
     const res = await client.send(command);
 }
 
+
+async function get_problems(server_id, user_id) {
+  const get_problem = {
+    "Key": {
+      "server_id": {
+	"S": server_id
+      },
+      "user_id": {
+	"S": user_id
+      }
+    },
+    "TableName": "leetboard"
+  };
+  const command = new GetItemCommand(get_problem);
+  const res = await client.send(command);
+  console.log(res.Item);
+  return res.Item?.problem?.L ? res.Item.problem.L.map(item => item.S) : [];
+}
+
+
 async function get_score(server_id, user_id) {
     const get_score = {
         "Key": {
@@ -122,4 +142,4 @@ async function register_lc(server_id, user_id, username) {
     }
 }
 
-module.exports = { get_score, update_score, add_problem, get_username, register_lc };
+module.exports = { get_score, update_score, add_problem, get_problems, get_username, register_lc };
