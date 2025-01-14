@@ -13,8 +13,9 @@ module.exports = {
         await interaction.deferReply();
         try {
             const server_id = interaction.guild.id;
+            const table_scores = "leetboard_scores_f24"
             const query = {
-                "TableName": "leetboard_scores",
+                "TableName": table_scores,
                 "KeyConditionExpression": "server_id = :server_id",
                 "ExpressionAttributeValues": {
                     ":server_id": { S: server_id }

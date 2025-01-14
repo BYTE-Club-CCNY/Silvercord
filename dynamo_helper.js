@@ -7,8 +7,9 @@ async function fetchNodeFetch() {
   return fetch;
 }
 
-async function add_problem(server_id, user_id, link, problem) {
+async function add_problem(server_id, user_id, link, problem, table) {
     // for now dont need to return anything, can be added later
+
     const add_problem = {
         "Key": {
             "server_id": {
@@ -32,14 +33,14 @@ async function add_problem(server_id, user_id, link, problem) {
             ":new_problem": { L: [{ S: problem }] },
             ":empty_list": { L: [] }
         },
-        "TableName": "leetboard"
+        "TableName": table
     };
     const command = new UpdateItemCommand(add_problem);
     const res = await client.send(command);
 }
 
 
-async function get_problems(server_id, user_id) {
+async function get_problems(server_id, user_id, table) {
   const get_problem = {
     "Key": {
       "server_id": {
@@ -49,7 +50,7 @@ async function get_problems(server_id, user_id) {
 	"S": user_id
       }
     },
-    "TableName": "leetboard"
+    "TableName": table
   };
   const command = new GetItemCommand(get_problem);
   const res = await client.send(command);
@@ -58,7 +59,7 @@ async function get_problems(server_id, user_id) {
 }
 
 
-async function get_score(server_id, user_id) {
+async function get_score(server_id, user_id, table) {
     const get_score = {
         "Key": {
             "server_id": {
@@ -68,14 +69,14 @@ async function get_score(server_id, user_id) {
                 "S": user_id 
             },
         },
-        "TableName": "leetboard_scores"
+        "TableName": table
     };
     const command = new GetItemCommand(get_score);
     const get_score_res = await client.send(command);
     return get_score_res.Item?.score?.N ? parseInt(get_score_res.Item.score.N, 10) : 0;
 }
 
-async function get_username(server_id, user_id) {
+async function get_username(server_id, user_id, table) {
     const get_score = {
         "Key": {
             "server_id": {
@@ -85,14 +86,14 @@ async function get_username(server_id, user_id) {
                 "S": user_id 
             },
         },
-        "TableName": "leetboard"
+        "TableName": table
     };
     const command = new GetItemCommand(get_score);
     const get_username = await client.send(command);
     return get_username.Item?.username?.S ? get_username.Item.username.S : null;
 }
 
-async function update_score(server_id, user_id, score) {
+async function update_score(server_id, user_id, score, table) {
     // doesn't need to return anything; sort of an in-place function
     const update_score = {
         "Item": {
@@ -106,13 +107,13 @@ async function update_score(server_id, user_id, score) {
                 "N": score.toString()
             }
         },
-        "TableName": "leetboard_scores"
+        "TableName": table
     };
     const command = new PutItemCommand(update_score);
     const res = await client.send(command);
 }
 
-async function register_lc(server_id, user_id, username) {
+async function register_lc(server_id, user_id, username, table) {
     // returns true to ensure successfully registered 
     try {
         const register_lc = {
@@ -131,7 +132,7 @@ async function register_lc(server_id, user_id, username) {
                 ":username": { "S": username }
             },
             "UpdateExpression": "SET #username = :username",
-            "TableName": "leetboard"
+            "TableName": table
         };
         const command = new UpdateItemCommand(register_lc)
         const res = await client.send(command);
