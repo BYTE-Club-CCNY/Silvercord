@@ -63,29 +63,29 @@ module.exports = {
 			const command = new QueryCommand(query);
 			const response = await client.send(command);
 			const items = response.Items || [];
-			if (items.length === 0) {
-				await interaction.followUp('No leaderboard data to be retrieved');
-				return;
-			}
-			const sorted_users = await Promise.all(
-				items.map(async item => {
-					const user = await interaction.client.users.fetch(item.user_id.S);
-					return [user.username, parseInt(item.score.N, 10)];
-				})
-			);
-			sorted_users.sort((a, b) => b[1] - a[1]);
 			const prev_score = await get_score(server_id, user_id, table_scores);
 			const final_score = prev_score + parseInt(score, 10);
-			for (let i = 0; i < sorted_users.length; i++) {
-				if (sorted_users[i + 1][1] === prev_score) {
-					nextUserScore = sorted_users[i][1]
-					nextUserName = sorted_users[i][0]
-					break
+			if (items.length !== 0) {
+				const sorted_users = await Promise.all(
+					items.map(async item => {
+						const user = await interaction.client.users.fetch(item.user_id.S);
+						return [user.username, parseInt(item.score.N, 10)];
+					})
+				);
+				sorted_users.sort((a, b) => b[1] - a[1]);
+				for (let i = 0; i < sorted_users.length; i++) {
+					if (sorted_users[i + 1][1] === prev_score) {
+						nextUserScore = sorted_users[i][1]
+						nextUserName = sorted_users[i][0]
+						break
+					}
 				}
+			} else {
+				nextUserScore = prev_score
 			}
+
 			// update the score:
 			await update_score(server_id, user_id, final_score, table_scores);
-
 			await add_problem(server_id, user_id, user_link, problem_name, table);
 			console.log(`prev score: ${prev_score}, new score: ${final_score}`)
 			if (prev_score <= nextUserScore < final_score) {
