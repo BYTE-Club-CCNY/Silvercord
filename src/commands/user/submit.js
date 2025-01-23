@@ -1,8 +1,10 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { get_difficulty, extractProblem } = require('../../../helper');
 const { get_score, update_score, add_problem, get_problems } = require('../../../dynamo_helper');
+const {dynamoConfig} = require("../../../aws-config");
+const {DynamoDBClient, QueryCommand} = require("@aws-sdk/client-dynamodb");
+const client = new DynamoDBClient(dynamoConfig);
 const path = require('node:path');
-
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -16,16 +18,18 @@ module.exports = {
 		if (!interaction.isChatInputCommand()) return;
 		const user_link = interaction.options.getString('link') ?? 'No link provided'
 		await interaction.deferReply();
+		let nextUserScore;
+		let nextUserName;
 		try {
 			is_valid = true // change this when we implement validate_page
 			if (!is_valid) {
 				interaction.followUp(`Link ${user_link} is an invalid submission`);
 				return;
 			}
-            const server_id = interaction.guild.id;
-            const user_id = interaction.user.id;
-			const table = "leetboard_f24";
-			const table_scores = "leetboard_scores_f24"
+			const server_id = interaction.guild.id;
+			const user_id = interaction.user.id;
+			const table = "leetboard";
+			const table_scores = "leetboard_scores"
 			// verifying link manually
 			const problem_name = extractProblem(user_link);
 			if (problem_name === null) {
@@ -47,15 +51,48 @@ module.exports = {
 			} else {
 				score = 4
 			}
-			// below retrieves data from dynamoDB; table name, partition key, and sort key are all required in the "query"
-            const prev_score = await get_score(server_id, user_id, table_scores);
+			// below is to get scores to compare, see if user has now beat the next user
+			const query = {
+				"TableName": table_scores,
+				"KeyConditionExpression": "server_id = :server_id",
+				"ExpressionAttributeValues": {
+					":server_id": {S: server_id}
+				},
+				"ProjectionExpression": "score, user_id"
+			};
+			const command = new QueryCommand(query);
+			const response = await client.send(command);
+			const items = response.Items || [];
+			if (items.length === 0) {
+				await interaction.followUp('No leaderboard data to be retrieved');
+				return;
+			}
+			const sorted_users = await Promise.all(
+				items.map(async item => {
+					const user = await interaction.client.users.fetch(item.user_id.S);
+					return [user.username, parseInt(item.score.N, 10)];
+				})
+			);
+			sorted_users.sort((a, b) => b[1] - a[1]);
+			const prev_score = await get_score(server_id, user_id, table_scores);
 			const final_score = prev_score + parseInt(score, 10);
-            // update the score:
-            await update_score(server_id, user_id, final_score, table_scores);
+			for (let i = 0; i < sorted_users.length; i++) {
+				if (sorted_users[i + 1][1] === prev_score) {
+					nextUserScore = sorted_users[i][1]
+					nextUserName = sorted_users[i][0]
+					break
+				}
+			}
+			// update the score:
+			await update_score(server_id, user_id, final_score, table_scores);
 
-            await add_problem(server_id, user_id, user_link, problem_name, table);
-            console.log(`prev score: ${prev_score}, new score: ${final_score}`)
-			interaction.followUp(`${difficulty} problem submitted. \n${interaction.user.username}'s score is now ${final_score}!`);
+			await add_problem(server_id, user_id, user_link, problem_name, table);
+			console.log(`prev score: ${prev_score}, new score: ${final_score}`)
+			if (prev_score <= nextUserScore < final_score) {
+				interaction.followUp(`${difficulty} problem submitted. \n${interaction.user.username} has taken ${nextUserName}'s place with new score ${final_score}!`);
+			} else {
+				interaction.followUp(`${difficulty} problem submitted. \n${interaction.user.username}'s score is now ${final_score}!`);
+			}
 		} catch (error) {
 			console.log(error);
 			interaction.followUp('Could not submit problem, please try again');

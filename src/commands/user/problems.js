@@ -9,7 +9,7 @@ module.exports = {
     async execute(interaction) {
       const server_id = interaction.guild.id;
       const user_id = interaction.user.id;
-      const table = "leetboard_f24"
+      const table = "leetboard"
       const problems = await get_problems(server_id, user_id, table);
       if (!problems || problems.length == 0) {
 	await interaction.reply("You haven't completed any problems yet!");

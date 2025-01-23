@@ -14,7 +14,7 @@ module.exports = {
         user_id = interaction.user.id;
         await interaction.deferReply();
         try {
-            const table = "leetboard_f24"
+            const table = "leetboard"
             const username = await get_username(server_id, user_id, table);
             if (username === null) {
                 interaction.followUp('You are not registered! Do /register to view your online LeetCode stats!');

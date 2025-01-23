@@ -18,7 +18,7 @@ module.exports = {
         const user_id = interaction.user.id;
         await interaction.deferReply();
         try {
-            const table = "leetboard_f24"
+            const table = "leetboard"
             const registered = await register_lc(server_id, user_id, input_username, table)
             if (!registered) {
                 interaction.followUp(`Failed to register user ${input_username}. Please try again`);

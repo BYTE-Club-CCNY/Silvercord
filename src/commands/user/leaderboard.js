@@ -13,7 +13,7 @@ module.exports = {
         await interaction.deferReply();
         try {
             const server_id = interaction.guild.id;
-            const table_scores = "leetboard_scores_f24"
+            const table_scores = "leetboard_scores"
             const query = {
                 "TableName": table_scores,
                 "KeyConditionExpression": "server_id = :server_id",
@@ -49,7 +49,7 @@ module.exports = {
             }
             embed = new EmbedBuilder()
                 .setColor('#0099ff')
-                .setTitle("Highest LeetCode Scores (Fall 2024)")
+                .setTitle("Highest LeetCode Scores (Season 2, Jan23 - May24)")
                 .setDescription(leaderboard_text)
 
             console.log(sorted_users);
