@@ -78,7 +78,7 @@ module.exports = {
 		    if (sorted_users.length > 1) {
 				for (let i = 1; i < sorted_users.length; ++i) {
 					if (sorted_users[i][0] == user_id && sorted_users[i][1] == prev_score) {
-						if sorted_users[i-1][0] != user_id {
+						if (sorted_users[i-1][0] != user_id) {
 							nextUserID = sorted_users[i-1][0];
 							nextUserScore = sorted_users[i-1][1]; 
 							break;
