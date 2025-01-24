@@ -74,61 +74,46 @@ module.exports = {
 			})
 		    );
 		    sorted_users.sort((a, b) => b[1] - a[1]);
-		    console.log("sorted users", sorted_users);
 
 		    if (sorted_users.length > 1) {
-			//for (let i = 0; i < sorted_users.length-1; i++) {
-			//    if (sorted_users[i + 1][1] === prev_score) {
-			//        nextUserScore = sorted_users[i][1]
-			//            nextUserID = sorted_users[i][0]
-			//            console.log('next user score & id: ', nextUserScore, nextUserID)
-			//            break
-			//    }
-			//}
-			console.log("Type of sorted_user:", typeof(sorted_users[0][0]));
-			for (let i = 1; i < sorted_users.length; ++i) {
-				//   if (sorted_users[i][1] == prev_score) {
-				//nextUserID = sorted_users[i][0];
-				//nextUserScore = sorted_users[i][1];
-				//   }
-
-			    if (sorted_users[i][0] == user_id && sorted_users[i][1] == prev_score) {
-				nextUserID = sorted_users[i-1][0];
-				nextUserScore = sorted_users[i-1][1]; 
-				console.log('next user score & id: ', nextUserScore, nextUserID);
-				break;
-			    } else {
-				nextUserID = user_id;
-				nextUserScore = prev_score;
-			    }
+				for (let i = 1; i < sorted_users.length; ++i) {
+					if (sorted_users[i][0] == user_id && sorted_users[i][1] == prev_score) {
+						if sorted_users[i-1][0] != user_id {
+							nextUserID = sorted_users[i-1][0];
+							nextUserScore = sorted_users[i-1][1]; 
+							break;
+						}
+					} else {
+						// user is the highest score already
+						nextUserID = user_id;
+						nextUserScore = 0;
+					}
+				}
 			}
-
-		    }
 		} 
-	    } catch (error) {
-		console.log(error);
-		interaction.followUp('Internal error with data retrieval');
-	    }
-
-	    // update the score:
-	    await update_score(server_id, user_id, final_score, table_scores);
-	    await add_problem(server_id, user_id, user_link, problem_name, table);
-	    console.log(`prev score: ${prev_score}, new score: ${final_score}`)
-	    if (prev_score <= nextUserScore && nextUserScore < final_score) {
-		try {
-		    console.log('fetching with ID:', nextUserID);
-		    const nextUser = await interaction.client.users.fetch(nextUserID);
-		    interaction.followUp(`${difficulty} problem submitted. \n${interaction.user.username} has taken ${nextUser}'s place with new score ${final_score}!`);
 		} catch (error) {
-		    console.error('error fetching username', error);
-		    interaction.followUp('Error with username fetching');
+			console.log(error);
+			interaction.followUp('Internal error with data retrieval');
 		}
-	    } else {
-		interaction.followUp(`${difficulty} problem submitted. \n${interaction.user.username}'s score is now ${final_score}!`);
-	    }
+
+		// update the score:
+		await update_score(server_id, user_id, final_score, table_scores);
+		await add_problem(server_id, user_id, user_link, problem_name, table);
+		if (prev_score <= nextUserScore && nextUserScore < final_score) {
+			try {
+				console.log('fetching with ID:', nextUserID);
+				const nextUser = await interaction.client.users.fetch(nextUserID);
+				interaction.followUp(`${difficulty} problem submitted. \n${interaction.user.username} has taken ${nextUser}'s place with new score ${final_score}!`);
+			} catch (error) {
+				console.error('error fetching username', error);
+				interaction.followUp('Error with username fetching');
+			}
+		} else {
+			interaction.followUp(`${difficulty} problem submitted. \n${interaction.user.username}'s score is now ${final_score}!`);
+		}
 	} catch (error) {
-	    console.log(error);
-	    interaction.followUp('Could not submit problem, please try again');
+		console.log(error);
+		interaction.followUp('Could not submit problem, please try again');
 	}
-    }
+	}
 }
