@@ -19,7 +19,7 @@ module.exports = {
 		const user_link = interaction.options.getString('link') ?? 'No link provided'
 		await interaction.deferReply();
 		let nextUserScore;
-		let nextUserName;
+		let nextUserID;
 		try {
 			is_valid = true // change this when we implement validate_page
 			if (!is_valid) {
@@ -65,37 +65,52 @@ module.exports = {
 			const items = response.Items || [];
 			const prev_score = await get_score(server_id, user_id, table_scores);
 			const final_score = prev_score + parseInt(score, 10);
-			if (items.length !== 0) {
-				const sorted_users = await Promise.all(
-					items.map(async item => {
-						const user = await interaction.client.users.fetch(item.user_id.S);
-						return [user.username, parseInt(item.score.N, 10)];
-					})
-				);
-				sorted_users.sort((a, b) => b[1] - a[1]);
-				for (let i = 0; i < sorted_users.length; i++) {
-					if (sorted_users[i + 1][1] === prev_score) {
-						nextUserScore = sorted_users[i][1]
-						nextUserName = sorted_users[i][0]
-						break
-					}
-				}
-			} else {
-				nextUserScore = prev_score
-			}
+            try {
+                if (items && items.length > 0) {
+                    const sorted_users = await Promise.all(
+                            items.map(item => {
+                                return [item.user_id.S, parseInt(item.score.N, 10)];
+                                })
+                            );
+                    sorted_users.sort((a, b) => b[1] - a[1]);
+                    console.log("sorted users", sorted_users);
+                    if (sorted_users.length > 1) {
+                        for (let i = 0; i < sorted_users.length-1; i++) {
+                            if (sorted_users[i + 1][1] === prev_score) {
+                                nextUserScore = sorted_users[i][1]
+                                    nextUserID = sorted_users[i][0]
+                                    console.log('next user score & id: ', nextUserScore, nextUserID)
+                                    break
+                            }
+                        }
+                    }
+                } else {
+                    nextUserScore = prev_score
+                }
+            } catch (error) {
+                console.log(error);
+                interaction.followUp('Internal error with data retrieval');
+            }
 
-			// update the score:
-			await update_score(server_id, user_id, final_score, table_scores);
-			await add_problem(server_id, user_id, user_link, problem_name, table);
-			console.log(`prev score: ${prev_score}, new score: ${final_score}`)
-			if (prev_score <= nextUserScore < final_score) {
-				interaction.followUp(`${difficulty} problem submitted. \n${interaction.user.username} has taken ${nextUserName}'s place with new score ${final_score}!`);
-			} else {
-				interaction.followUp(`${difficulty} problem submitted. \n${interaction.user.username}'s score is now ${final_score}!`);
-			}
-		} catch (error) {
-			console.log(error);
-			interaction.followUp('Could not submit problem, please try again');
-		}
-	}
+            // update the score:
+            await update_score(server_id, user_id, final_score, table_scores);
+            await add_problem(server_id, user_id, user_link, problem_name, table);
+            console.log(`prev score: ${prev_score}, new score: ${final_score}`)
+                if (prev_score <= nextUserScore < final_score) {
+                    try {
+                        console.log('fetching with ID:', nextUserID);
+                        const nextUser = await interaction.client.users.fetch(nextUserID);
+                        interaction.followUp(`${difficulty} problem submitted. \n${interaction.user.username} has taken <@${nextUser}>'s place with new score ${final_score}!`);
+                    } catch (error) {
+                        console.error('error fetching username', error);
+                        interaction.followUp('Error with username fetching');
+                    }
+                } else {
+                    interaction.followUp(`${difficulty} problem submitted. \n${interaction.user.username}'s score is now ${final_score}!`);
+                }
+        } catch (error) {
+            console.log(error);
+            interaction.followUp('Could not submit problem, please try again');
+        }
+    }
 }
