@@ -52,7 +52,7 @@ This will install all dependencies (python and nodejs), leaving you in a preconf
 ## Limitations
 
 ## Contributions
-Jay Noppone P: Built entire ML integration for an LLM (Claude) pipeline that accepts scraped data to evaluate sentiment on professors & courses. Built the "LeetBoard" feature where users compete in each server by submitting validated LeetCode submissions, along with constructing all abstracted DynamoDB endpoints for scalability and ease of use. Streamlined Go testing application to ensure reliability of vector storage with ChromaDB for the LLM model. </br>
-Abrar Habib: Implementing entire Discord.JS framework & basic endpoints for user interaction. Used scraping tools and RateMyProfessorAPI endpoints for constructing data to be vector stored into ChromaDB for user prompts. </br>
-Judy Liu: Reformatted and wrote /break command to take advantage of existing ML integration & scraping tools.</br>
-Jawad Kabir (Project Mentor): Project management, ensured deliverables are met and satisfied.</br>
+[Jay Noppone P](https://github.com/jaynopponep): Built entire ML integration for an LLM (Claude) pipeline that accepts scraped data to evaluate sentiment on professors & courses. Built the "LeetBoard" feature where users compete in each server by submitting validated LeetCode submissions, along with constructing all abstracted DynamoDB endpoints for scalability and ease of use. Streamlined Go testing application to ensure reliability of vector storage with ChromaDB for the LLM model. </br>
+[Abrar Habib](https://github.com/dddictionary): Implementing entire Discord.JS framework & basic endpoints for user interaction. Used scraping tools and RateMyProfessorAPI endpoints for constructing data to be vector stored into ChromaDB for user prompts. </br>
+[Judy Liu](https://github.com/jdlu04): Reformatted and wrote /break command to take advantage of existing ML integration & scraping tools.</br>
+[Jawad Kabir](https://github.com/joewadk) (Project Mentor): Project management, ensured deliverables are met and satisfied.</br>
