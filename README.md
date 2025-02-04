@@ -50,3 +50,9 @@ This will install all dependencies (python and nodejs), leaving you in a preconf
 - The ability to check for updates on the Coursicle platform, specifically course section seats
 
 ## Limitations
+
+## Contributions
+Jay Noppone P: Built entire ML integration for an LLM (Claude) pipeline that accepts scraped data to evaluate sentiment on professors & courses. Built the "LeetBoard" feature where users compete in each server by submitting validated LeetCode submissions, along with constructing all abstracted DynamoDB endpoints for scalability and ease of use. Streamlined Go testing application to ensure reliability of vector storage with ChromaDB for the LLM model.
+Abrar Habib: Implementing entire Discord.JS framework & basic endpoints for user interaction. Used scraping tools and RateMyProfessorAPI endpoints for constructing data to be vector stored into ChromaDB for user prompts.
+Judy Liu: Reformatted and wrote /break command to take advantage of existing ML integration & scraping tools.
+Jawad Kabir: Project management, ensured deliverables are met and satisfied.  
