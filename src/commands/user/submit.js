@@ -64,33 +64,36 @@ module.exports = {
 	    const prev_score = await get_score(server_id, user_id, table_scores);
 	    const final_score = prev_score + parseInt(score, 10);
 
-	    let nextUserScore = 0;
-	    let nextUserID = user_id;
-	    try {
-		if (items && items.length > 0) {
-		    const sorted_users = await Promise.all(
-			items.map(item => {
-			    return [item.user_id.S, parseInt(item.score.N, 10)];
-			})
-		    );
-		    sorted_users.sort((a, b) => b[1] - a[1]);
+		let nextUserScore = 0;
+		let nextUserID = user_id;
+		try {
+			if (items && items.length > 0) {
+				const sorted_users = await Promise.all(
+					items.map(item => {
+						return [item.user_id.S, parseInt(item.score.N, 10)];
+					})
+				);
+				sorted_users.sort((a, b) => b[1] - a[1]);
 
-		    if (sorted_users.length > 1) {
-				for (let i = 1; i < sorted_users.length; ++i) {
-					if (sorted_users[i][0] == user_id && sorted_users[i][1] == prev_score) {
-						if (sorted_users[i-1][0] != user_id) {
-							nextUserID = sorted_users[i-1][0];
-							nextUserScore = sorted_users[i-1][1]; 
-							break;
+				if (sorted_users.length > 1) {
+					for (let i = 1; i < sorted_users.length; ++i) {
+						if (sorted_users[i][0] == user_id && sorted_users[i][1] == prev_score) {
+							if (sorted_users[i-1][0] != user_id) {
+								nextUserID = sorted_users[i-1][0];
+								nextUserScore = sorted_users[i-1][1]; 
+								break;
+							} else if (sorted_users[i+1][0] != user_id && sorted_users[i+1][1] == prev_score) {
+								nextUserID = sorted_users[i+1][0];
+								nextUserScore = sorted_users[i+1][1];
+							}
+						} else {
+							// user is the highest score already
+							nextUserID = user_id;
+							nextUserScore = 0;
 						}
-					} else {
-						// user is the highest score already
-						nextUserID = user_id;
-						nextUserScore = 0;
 					}
 				}
-			}
-		} 
+			} 
 		} catch (error) {
 			console.log(error);
 			interaction.followUp('Internal error with data retrieval');
