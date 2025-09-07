@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const path = require('node:path');
-const { register_lc } = require('../../../dynamo_helper');
+const { register_lc } = require('../../../api/dynamo_helper');
 
 module.exports = {
     data: new SlashCommandBuilder()

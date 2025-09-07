@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { get_problems } = require('../../../dynamo_helper.js');
+const { get_problems } = require('../../../api/dynamo_helper.js');
 
 module.exports = {
     data: new SlashCommandBuilder()

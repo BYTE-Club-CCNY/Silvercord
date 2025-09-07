@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { DynamoDBClient, QueryCommand } = require("@aws-sdk/client-dynamodb");
-const { dynamoConfig } = require('../../../aws-config');
+const { dynamoConfig } = require('../../../api/aws-config');
 const client = new DynamoDBClient(dynamoConfig);
 const path = require('node:path');
 
