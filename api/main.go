@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"github.com/joho/godotenv"
 	"log"
+	"main/routes"
 	"net/http"
 	"os"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/supabase-community/supabase-go"
 )
 
@@ -19,25 +18,16 @@ func main() {
 	}
 	supabaseUrl := os.Getenv("SUPABASE_URL_PRIVATE")
 	supabaseAnonKey := os.Getenv("SUPABASE_KEY_PRIVATE")
-	_, err = supabase.NewClient(
+	client, err2 := supabase.NewClient(
 		supabaseUrl,
 		supabaseAnonKey,
 		&supabase.ClientOptions{},
 	)
-	if err != nil {
-		log.Fatal("Error creating Supabase client: ", err)
+	if err2 != nil {
+		log.Fatal("Error creating Supabase client: ", err2)
 	}
-	r := chi.NewRouter()
+	r := routes.SetupRoutes(client)
 
-	r.Use(middleware.Logger)
-	r.Use(middleware.Heartbeat("/ping"))
-
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Chi Server Running"))
-	})
 	fmt.Println("Listening on port 8080")
-	err = http.ListenAndServe(":8080", r)
-	if err != nil {
-		return
-	}
+	log.Fatal(http.ListenAndServe(":8080", r))
 }
