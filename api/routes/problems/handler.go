@@ -1,47 +1,76 @@
-package routes
+package problems
 
 import (
 	"encoding/json"
-	"github.com/go-chi/chi/v5"
+	"github.com/go-playground/validator/v10"
 	"github.com/supabase-community/supabase-go"
-	"log"
+	"main/routes/utils"
 	"net/http"
+	"strings"
 )
 
 type Handler struct {
 	client *supabase.Client
 }
 
+var validate = validator.New()
+
 const LEETBOARD_PROBLEMS_TABLE = "leetboard_problems"
 
-func NewHandler(client *supabase.Client) http.Handler {
-	h := &Handler{client: client}
-
-	r := chi.NewRouter()
-	r.Get("/", h.getProblems)
-	return r
+func NewHandler(client *supabase.Client) *Handler {
+	return &Handler{client: client}
 }
 
-func (h *Handler) getProblems(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetProblems(w http.ResponseWriter, r *http.Request) {
 	serverID := r.URL.Query().Get("server_id")
 	userID := r.URL.Query().Get("user_id")
 	var problems []GetProblemsResponse
 
-	queryBuilder := h.client.From(LEETBOARD_PROBLEMS_TABLE)
-	querySelect := queryBuilder.
-		Select("user_id, link, problem", "1", false).
+	query := h.client.From(LEETBOARD_PROBLEMS_TABLE).
+		Select("user_id, link, problem", "", false).
 		Eq("server_id", serverID).
 		Eq("user_id", userID)
-	_, err := querySelect.ExecuteTo(&problems)
+	_, err := query.ExecuteTo(&problems)
 	if err != nil {
-		http.Error(w, "Error getting problems", http.StatusInternalServerError)
-		log.Fatal("Error: ", err)
+		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful")
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(problems)
-	if err != nil {
-		http.Error(w, "Error encoding", http.StatusInternalServerError)
+	utils.WriteJSONResponse(w, problems, http.StatusOK)
+}
+
+func (h *Handler) AddProblem(w http.ResponseWriter, r *http.Request) {
+	var request AddProblemRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		utils.WriteInternalServerErrorResponse(w, "Invalid request body")
 		return
 	}
+
+	if err := validate.Struct(request); err != nil {
+		utils.WriteInternalServerErrorResponse(w, "Invalid request body")
+		return
+	}
+
+	insertData := map[string]interface{}{
+		"id":        request.ID,
+		"server_id": request.ServerID,
+		"user_id":   request.UserID,
+		"link":      request.Link,
+		"problem":   request.Problem,
+	}
+
+	query := h.client.From(LEETBOARD_PROBLEMS_TABLE).
+		Insert(insertData, false, "server_id,user_id,problem", "representation", "")
+	_, _, err := query.Execute()
+
+	if err != nil {
+		if strings.Contains(err.Error(), "23505") {
+			utils.WriteConflictResponse(w, "User has already submitted problem in this server")
+			return
+		}
+		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful")
+		return
+	}
+
+	utils.WriteSuccessResponse(w, "Success")
 }

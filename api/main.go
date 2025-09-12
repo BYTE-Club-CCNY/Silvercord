@@ -18,6 +18,7 @@ func main() {
 	}
 	supabaseUrl := os.Getenv("SUPABASE_URL_PRIVATE")
 	supabaseAnonKey := os.Getenv("SUPABASE_KEY_PRIVATE")
+
 	client, err2 := supabase.NewClient(
 		supabaseUrl,
 		supabaseAnonKey,
