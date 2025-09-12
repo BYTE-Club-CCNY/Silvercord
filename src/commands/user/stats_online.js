@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { get_online_username } = require('../../../helper');
-const { get_username } = require('../../../dynamo_helper');
+const { get_online_username } = require('../../../api/helper');
+const { get_username } = require('../../../api/dynamo_helper');
 // const path = require('node:path');
 
 module.exports = {
