@@ -15,8 +15,6 @@ type Handler struct {
 
 var validate = validator.New()
 
-const LEETBOARD_PROBLEMS_TABLE = "leetboard_problems"
-
 func NewHandler(client *supabase.Client) *Handler {
 	return &Handler{client: client}
 }
@@ -26,7 +24,7 @@ func (h *Handler) GetProblems(w http.ResponseWriter, r *http.Request) {
 	userID := r.URL.Query().Get("user_id")
 	var problems []GetProblemsResponse
 
-	query := h.client.From(LEETBOARD_PROBLEMS_TABLE).
+	query := h.client.From(utils.LEETBOARD_PROBLEMS_TABLE).
 		Select("user_id, link, problem", "", false).
 		Eq("server_id", serverID).
 		Eq("user_id", userID)
@@ -59,7 +57,7 @@ func (h *Handler) AddProblem(w http.ResponseWriter, r *http.Request) {
 		"problem":   request.Problem,
 	}
 
-	query := h.client.From(LEETBOARD_PROBLEMS_TABLE).
+	query := h.client.From(utils.LEETBOARD_PROBLEMS_TABLE).
 		Insert(insertData, false, "server_id,user_id,problem", "representation", "")
 	_, _, err := query.Execute()
 

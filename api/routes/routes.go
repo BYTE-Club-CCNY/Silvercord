@@ -15,7 +15,6 @@ func SetupRoutes(client *supabase.Client) *chi.Mux {
 	r.Use(middleware.Heartbeat("/ping"))
 
 	// routes to add:
-	// add problem(server id, userid, link, problem, table)
 	// get score(serverid, userid, table)
 	// get username(serverid, userid, table)
 	// updatescore(serverid, userid, score, table)
