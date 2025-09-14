@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 COHERE_KEY = os.getenv("COHERE_KEY")
-chroma_client = chromadb.Client()
+chroma_client = chromadb.PersistentClient(path="./chroma_db")
 co = cohere.ClientV2(api_key=COHERE_KEY)
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -20,9 +20,9 @@ headers = {
 embedding_model = "embed-v4.0"
 input_type = "search_document"
 
-def extract_page_html(url: str):
+def extract_page_html(url_in: str):
     try:
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url_in, headers=headers, timeout=10)
         response.raise_for_status()
         return response.text
     except requests.RequestException as e:
@@ -52,22 +52,26 @@ def embed(content):
     )
     return embed_response
 
-def vector_store(embeddings_in, data_list, prof_id_in):
-    collection = chroma_client.create_collection(name="professor_reviews")
+def vector_store(embeddings_in, data_list, prof_id_in, prof_name_in):
+    try:
+        collection = chroma_client.create_collection(name="professor_reviews")
+    except Exception:
+        collection = chroma_client.get_collection(name="professor_reviews")
     collection.add(
         ids=[f"prof_{prof_id_in}_review_{c['commentId']}" for c in data_list],
         documents=[c['content'] for c in data_list],
         embeddings=embeddings_in.embeddings.float,
-        metadatas=[{'commentId': c['commentId'], 'source': c['source']} for c in data_list],
+        metadatas=[{'commentId': c['commentId'], 'source': c['source'], 'professor_name': prof_name_in} for c in data_list],
     )
     return collection
 
 if __name__ == '__main__':
     url = 'https://www.ratemyprofessors.com/professor/2380866'
+    url = 'https://www.ratemyprofessors.com/professor/432142'
     html = extract_page_html(url)
     prof_id = url.split('/')[-1]
-    print("prof_id: ", prof_id)
     reviews = extract_prof_reviews(html)
+    prof_name = "Douglas Troeger"
     review_texts= [review['content'] for review in reviews]
     embeddings = embed(review_texts)
-    print(vector_store(embeddings, reviews, prof_id))
+    print(vector_store(embeddings, reviews, prof_id, prof_name))
