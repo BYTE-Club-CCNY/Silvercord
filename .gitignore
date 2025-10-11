@@ -5,3 +5,4 @@ node_modules
 go.sum
 __pycache__
 .DS_Store
+silvercord_agent/venv/
