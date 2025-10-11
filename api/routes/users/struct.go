@@ -5,8 +5,7 @@ type GetUsernameResponse struct {
 }
 
 type RegisterLCUserRequest struct {
-	ServerID string `json:"server_id" validate:"required"`
-	UserID   string `json:"user_id" validate:"required"`
+	ServerID int64  `json:"server_id" validate:"required"`
+	UserID   int64  `json:"user_id" validate:"required"`
 	Username string `json:"username" validate:"required"`
 }
-

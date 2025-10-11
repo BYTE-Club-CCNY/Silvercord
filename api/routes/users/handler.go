@@ -2,10 +2,11 @@ package users
 
 import (
 	"encoding/json"
-	"github.com/go-playground/validator/v10"
-	"github.com/supabase-community/supabase-go"
 	"main/routes/utils"
 	"net/http"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/supabase-community/supabase-go"
 )
 
 type Handler struct {
@@ -21,7 +22,7 @@ func NewHandler(client *supabase.Client) *Handler {
 func (h *Handler) GetUsername(w http.ResponseWriter, r *http.Request) {
 	serverID := r.URL.Query().Get("server_id")
 	userID := r.URL.Query().Get("user_id")
-	
+
 	var users []struct {
 		LeetcodeUsername string `json:"leetcode_username"`
 	}
@@ -30,7 +31,7 @@ func (h *Handler) GetUsername(w http.ResponseWriter, r *http.Request) {
 		Select("leetcode_username", "", false).
 		Eq("server_id", serverID).
 		Eq("user_id", userID)
-	
+
 	_, err := query.ExecuteTo(&users)
 	if err != nil {
 		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful")
@@ -69,7 +70,7 @@ func (h *Handler) RegisterLCUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := h.client.From(utils.LEETBOARD_USERNAME_TABLE).
-		Upsert(upsertData, "", "", "representation", "")
+		Upsert(upsertData, "", "representation", "")
 	_, _, err := query.Execute()
 
 	if err != nil {
