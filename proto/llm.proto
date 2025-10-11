@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package llm;
+option go_package = "github.com/BYTE-Club-CCNY/Silvercord/api/proto";
+
+service LLMService {
+  rpc ProcessRequest (QueryRequest) returns (QueryResponse) {}
+}
+
+message QueryRequest {
+  string user_id = 1;
+  string query = 2;
+}
+
+message QueryResponse {
+  string response_text = 1;
+  bool success = 2;
+}
+

@@ -1,13 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"os/exec"
 	"strings"
 	"testing"
-	"fmt"
 )
 
-// below is a test for 7 rate my professor links to make sure that the pipeline works correctly. 
+// below is a test for 7 rate my professor links to make sure that the pipeline works correctly.
 // see TESTING.md for more instructions
 func TestPipeline(t *testing.T) {
 	urls := []string{
