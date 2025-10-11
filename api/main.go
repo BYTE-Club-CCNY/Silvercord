@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/joho/godotenv"
 	"log"
-	"main/routes"
 	"net/http"
 	"os"
 
+	"github.com/BYTE-Club-CCNY/Silvercord/api/routes"
+	"github.com/joho/godotenv"
 	"github.com/supabase-community/supabase-go"
 )
 

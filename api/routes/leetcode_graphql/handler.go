@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"main/routes/utils"
 	"net/http"
 	"strings"
+
+	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/utils"
 )
 
 type Handler struct{}
@@ -166,4 +167,3 @@ func (h *Handler) ExtractProblem(w http.ResponseWriter, r *http.Request) {
 
 	utils.WriteJSONResponse(w, ExtractProblemResponse{Problem: problem}, http.StatusOK)
 }
-

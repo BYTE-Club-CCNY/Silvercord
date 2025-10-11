@@ -1,14 +1,16 @@
 package routes
 
 import (
+	"net/http"
+
+	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/leetcode_graphql"
+	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/problems"
+	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/scores"
+	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/users"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/supabase-community/supabase-go"
-	leetcode_graphql "main/routes/leetcode_graphql"
-	problems "main/routes/problems"
-	scores "main/routes/scores"
-	users "main/routes/users"
-	"net/http"
 )
 
 func SetupRoutes(client *supabase.Client) *chi.Mux {

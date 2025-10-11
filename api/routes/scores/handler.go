@@ -2,9 +2,10 @@ package scores
 
 import (
 	"encoding/json"
-	"main/routes/utils"
 	"net/http"
 	"strconv"
+
+	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/utils"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/supabase-community/supabase-go"

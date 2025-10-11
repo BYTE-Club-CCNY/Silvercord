@@ -2,11 +2,13 @@ package problems
 
 import (
 	"encoding/json"
-	"github.com/go-playground/validator/v10"
-	"github.com/supabase-community/supabase-go"
-	"main/routes/utils"
 	"net/http"
 	"strings"
+
+	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/utils"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/supabase-community/supabase-go"
 )
 
 type Handler struct {
