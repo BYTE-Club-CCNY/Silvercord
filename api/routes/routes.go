@@ -5,6 +5,8 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/supabase-community/supabase-go"
 	problems "main/routes/problems"
+	scores "main/routes/scores"
+	users "main/routes/users"
 	"net/http"
 )
 
@@ -14,12 +16,6 @@ func SetupRoutes(client *supabase.Client) *chi.Mux {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Heartbeat("/ping"))
 
-	// routes to add:
-	// get score(serverid, userid, table)
-	// get username(serverid, userid, table)
-	// updatescore(serverid, userid, score, table)
-	// registerlc(serverid, userid, username, table)
-
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Chi Go Server Running"))
 	})
@@ -28,6 +24,18 @@ func SetupRoutes(client *supabase.Client) *chi.Mux {
 	r.Route("/problems", func(r chi.Router) {
 		r.Get("/", problemsHandler.GetProblems)
 		r.Post("/", problemsHandler.AddProblem)
+	})
+
+	scoresHandler := scores.NewHandler(client)
+	r.Route("/scores", func(r chi.Router) {
+		r.Get("/", scoresHandler.GetScore)
+		r.Post("/", scoresHandler.UpdateScore)
+	})
+
+	usersHandler := users.NewHandler(client)
+	r.Route("/users", func(r chi.Router) {
+		r.Get("/username", usersHandler.GetUsername)
+		r.Post("/register", usersHandler.RegisterLCUser)
 	})
 
 	return r
