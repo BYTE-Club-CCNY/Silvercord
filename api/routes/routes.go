@@ -4,6 +4,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/supabase-community/supabase-go"
+	leetcode_graphql "main/routes/leetcode_graphql"
 	problems "main/routes/problems"
 	scores "main/routes/scores"
 	users "main/routes/users"
@@ -36,6 +37,13 @@ func SetupRoutes(client *supabase.Client) *chi.Mux {
 	r.Route("/users", func(r chi.Router) {
 		r.Get("/username", usersHandler.GetUsername)
 		r.Post("/register", usersHandler.RegisterLCUser)
+	})
+
+	leetcodeHandler := leetcode_graphql.NewHandler()
+	r.Route("/leetcode", func(r chi.Router) {
+		r.Get("/user", leetcodeHandler.GetOnlineUsername)
+		r.Get("/difficulty", leetcodeHandler.GetDifficulty)
+		r.Get("/extract-problem", leetcodeHandler.ExtractProblem)
 	})
 
 	return r
