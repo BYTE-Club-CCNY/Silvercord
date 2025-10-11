@@ -1,11 +1,27 @@
-.venv
-.idea
-.env
-node_modules
-go.sum
-__pycache__
-.DS_Store
+# Code Editors
+.vscode/
+.idea/
+
+# Node
+node_modules/
+npm-debug.log
+
+# Python
+__pycache__/
+*.pyc
 silvercord_agent/venv/
+silvercord_agent/.venv/
+
+# Go
+*.exe
+*.out
+
+# Nix
+result
+*.drv
+
+# Editors / OS
+.DS_Store
 
 ## for client Discord side:
 .env.client
