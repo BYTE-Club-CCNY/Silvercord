@@ -21,3 +21,5 @@ result
 .vscode/
 .idea/
 
+# environment files
+.env

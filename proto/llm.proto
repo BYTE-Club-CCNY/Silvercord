@@ -11,6 +11,7 @@ service LLMService {
 message QueryRequest {
   string user_id = 1;
   string query = 2;
+  string command = 3;
 }
 
 message QueryResponse {
