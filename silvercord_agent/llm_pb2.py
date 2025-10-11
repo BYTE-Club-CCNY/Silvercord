@@ -24,21 +24,18 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\tllm.proto\x12\nsilvercord\",\n\nLLMRequest\x12\x0f\n\x07user_id\x18\x01 \x01(\t\x12\r\n\x05query\x18\x02 \x01(\t\"\x8e\x01\n\x0bLLMResponse\x12\x15\n\rresponse_text\x18\x01 \x01(\t\x12\x37\n\x08metadata\x18\x02 \x03(\x0b\x32%.silvercord.LLMResponse.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x32Q\n\nLLMService\x12\x43\n\x0eProcessRequest\x12\x16.silvercord.LLMRequest\x1a\x17.silvercord.LLMResponse\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\tllm.proto\x12\x03llm\".\n\x0cQueryRequest\x12\x0f\n\x07user_id\x18\x01 \x01(\t\x12\r\n\x05query\x18\x02 \x01(\t\"7\n\rQueryResponse\x12\x15\n\rresponse_text\x18\x01 \x01(\t\x12\x0f\n\x07success\x18\x02 \x01(\x08\x32\x83\x01\n\nLLMService\x12\x39\n\x0eProcessRequest\x12\x11.llm.QueryRequest\x1a\x12.llm.QueryResponse\"\x00\x12:\n\rStreamRequest\x12\x11.llm.QueryRequest\x1a\x12.llm.QueryResponse\"\x00\x30\x01\x42\x30Z.github.com/BYTE-Club-CCNY/Silvercord/api/protob\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'llm_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
-  DESCRIPTOR._loaded_options = None
-  _globals['_LLMRESPONSE_METADATAENTRY']._loaded_options = None
-  _globals['_LLMRESPONSE_METADATAENTRY']._serialized_options = b'8\001'
-  _globals['_LLMREQUEST']._serialized_start=25
-  _globals['_LLMREQUEST']._serialized_end=69
-  _globals['_LLMRESPONSE']._serialized_start=72
-  _globals['_LLMRESPONSE']._serialized_end=214
-  _globals['_LLMRESPONSE_METADATAENTRY']._serialized_start=167
-  _globals['_LLMRESPONSE_METADATAENTRY']._serialized_end=214
-  _globals['_LLMSERVICE']._serialized_start=216
-  _globals['_LLMSERVICE']._serialized_end=297
+  _globals['DESCRIPTOR']._loaded_options = None
+  _globals['DESCRIPTOR']._serialized_options = b'Z.github.com/BYTE-Club-CCNY/Silvercord/api/proto'
+  _globals['_QUERYREQUEST']._serialized_start=18
+  _globals['_QUERYREQUEST']._serialized_end=64
+  _globals['_QUERYRESPONSE']._serialized_start=66
+  _globals['_QUERYRESPONSE']._serialized_end=121
+  _globals['_LLMSERVICE']._serialized_start=124
+  _globals['_LLMSERVICE']._serialized_end=255
 # @@protoc_insertion_point(module_scope)

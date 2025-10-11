@@ -35,3 +35,8 @@ export function processLLMRequest(userId, query) {
     });
   });
 }
+
+export function streamLLMRequest(userId, query) {
+  const stream = client.StreamRequest({ user_id: userId, query });
+  return stream;
+}

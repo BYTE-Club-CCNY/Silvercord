@@ -4,16 +4,28 @@ import grpc
 import llm_pb2
 import llm_pb2_grpc
 from llm import process_query
+import time
 
 
 class LLMServiceServicer(llm_pb2_grpc.LLMServiceServicer):
     def ProcessRequest(self, request, context):
         print(f"Received request from {request.user_id}: {request.query}")
         result = process_query(request.query)
-        return llm_pb2.LLMResponse(
+        return llm_pb2.QueryResponse(
                 response_text=result,
-                metadata={"model": "claude", "status": "ok"}
+                success=True
         )
+
+    def StreamRequest(self, request, context):
+        print(f"Received stream request from {request.user_id}: {request.query}")
+        for i in range(3):
+            response_text = f"Stream message {i+1} for query: {request.query}"
+            yield llm_pb2.QueryResponse(
+                response_text=response_text,
+                success=True
+            )
+            time.sleep(1)
+
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))

@@ -5,6 +5,7 @@ option go_package = "github.com/BYTE-Club-CCNY/Silvercord/api/proto";
 
 service LLMService {
   rpc ProcessRequest (QueryRequest) returns (QueryResponse) {}
+  rpc StreamRequest(QueryRequest) returns (stream QueryResponse) {}
 }
 
 message QueryRequest {

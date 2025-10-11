@@ -35,9 +35,14 @@ class LLMServiceStub(object):
             channel: A grpc.Channel.
         """
         self.ProcessRequest = channel.unary_unary(
-                '/silvercord.LLMService/ProcessRequest',
-                request_serializer=llm__pb2.LLMRequest.SerializeToString,
-                response_deserializer=llm__pb2.LLMResponse.FromString,
+                '/llm.LLMService/ProcessRequest',
+                request_serializer=llm__pb2.QueryRequest.SerializeToString,
+                response_deserializer=llm__pb2.QueryResponse.FromString,
+                _registered_method=True)
+        self.StreamRequest = channel.unary_stream(
+                '/llm.LLMService/StreamRequest',
+                request_serializer=llm__pb2.QueryRequest.SerializeToString,
+                response_deserializer=llm__pb2.QueryResponse.FromString,
                 _registered_method=True)
 
 
@@ -50,19 +55,30 @@ class LLMServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def StreamRequest(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_LLMServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'ProcessRequest': grpc.unary_unary_rpc_method_handler(
                     servicer.ProcessRequest,
-                    request_deserializer=llm__pb2.LLMRequest.FromString,
-                    response_serializer=llm__pb2.LLMResponse.SerializeToString,
+                    request_deserializer=llm__pb2.QueryRequest.FromString,
+                    response_serializer=llm__pb2.QueryResponse.SerializeToString,
+            ),
+            'StreamRequest': grpc.unary_stream_rpc_method_handler(
+                    servicer.StreamRequest,
+                    request_deserializer=llm__pb2.QueryRequest.FromString,
+                    response_serializer=llm__pb2.QueryResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'silvercord.LLMService', rpc_method_handlers)
+            'llm.LLMService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('silvercord.LLMService', rpc_method_handlers)
+    server.add_registered_method_handlers('llm.LLMService', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
@@ -83,9 +99,36 @@ class LLMService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/silvercord.LLMService/ProcessRequest',
-            llm__pb2.LLMRequest.SerializeToString,
-            llm__pb2.LLMResponse.FromString,
+            '/llm.LLMService/ProcessRequest',
+            llm__pb2.QueryRequest.SerializeToString,
+            llm__pb2.QueryResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def StreamRequest(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/llm.LLMService/StreamRequest',
+            llm__pb2.QueryRequest.SerializeToString,
+            llm__pb2.QueryResponse.FromString,
             options,
             channel_credentials,
             insecure,
