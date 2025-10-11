@@ -1,14 +1,15 @@
 package routes
 
 import (
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/supabase-community/supabase-go"
 	leetcode_graphql "main/routes/leetcode_graphql"
 	problems "main/routes/problems"
 	scores "main/routes/scores"
 	users "main/routes/users"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/supabase-community/supabase-go"
 )
 
 func SetupRoutes(client *supabase.Client) *chi.Mux {
@@ -31,6 +32,7 @@ func SetupRoutes(client *supabase.Client) *chi.Mux {
 	r.Route("/scores", func(r chi.Router) {
 		r.Get("/", scoresHandler.GetScore)
 		r.Post("/", scoresHandler.UpdateScore)
+		r.Get("/leaderboard", scoresHandler.GetLeaderboard)
 	})
 
 	usersHandler := users.NewHandler(client)

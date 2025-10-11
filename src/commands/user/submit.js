@@ -1,123 +1,139 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { get_difficulty, extractProblem } = require('../../../api/helper');
-const { get_score, update_score, add_problem, get_problems } = require('../../../api/dynamo_helper');
-const {dynamoConfig} = require("../../../api/aws-config");
-const {DynamoDBClient, QueryCommand} = require("@aws-sdk/client-dynamodb");
-const client = new DynamoDBClient(dynamoConfig);
-const path = require('node:path');
+
+const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8080';
 
 module.exports = {
     data: new SlashCommandBuilder()
-    .setName('submit')
+	.setName('submit')
     .setDescription("Submit a LeetCode problem to the server's leaderboard!")
     .addStringOption(option => option
 	.setName('link')
 	.setDescription('Your submission link for a solved problem')
 	.setRequired(true)),
+
     async execute(interaction) {
 	if (!interaction.isChatInputCommand()) return;
 	const user_link = interaction.options.getString('link') ?? 'No link provided'
+
 	await interaction.deferReply();
-	try {
-	    is_valid = true // change this when we implement validate_page
-	    if (!is_valid) {
-		interaction.followUp(`Link ${user_link} is an invalid submission`);
-		return;
-	    }
-	    const server_id = interaction.guild.id;
-	    const user_id = interaction.user.id;
-	    const table = "leetboard";
-	    const table_scores = "leetboard_scores"
-	    // verifying link manually
-	    const problem_name = extractProblem(user_link);
-	    if (problem_name === null) {
-		interaction.followUp(`Link ${user_link} is in the wrong format, resubmit the link that contains the submission ID`);
-		return;
-	    }
-	    const problems = await get_problems(server_id, user_id, table);
-	    if (problems.includes(problem_name)) {
-		interaction.followUp(`You've already done this problem. Nice try.`)
-		return;
-	    }
-	    // calculate difficulty
-	    const difficulty = await get_difficulty(user_link);
-	    score = 0
-	    if (difficulty === "Easy") {
-		score = 1
-	    } else if (difficulty === "Medium") {
-		score = 2
-	    } else {
-		score = 4
-	    }
-	    // below is to get scores to compare, see if user has now beat the next user
-	    const query = {
-		"TableName": table_scores,
-		"KeyConditionExpression": "server_id = :server_id",
-		"ExpressionAttributeValues": {
-		    ":server_id": {S: server_id}
-		},
-		"ProjectionExpression": "score, user_id"
-	    };
-	    const command = new QueryCommand(query);
-	    const response = await client.send(command);
-	    const items = response.Items || [];
-	    const prev_score = await get_score(server_id, user_id, table_scores);
-	    const final_score = prev_score + parseInt(score, 10);
 
-		let nextUserScore = 0;
-		let nextUserID = user_id;
 		try {
-			if (items && items.length > 0) {
-				const sorted_users = await Promise.all(
-					items.map(item => {
-						return [item.user_id.S, parseInt(item.score.N, 10)];
-					})
-				);
-				sorted_users.sort((a, b) => b[1] - a[1]);
+			const server_id = interaction.guild.id;
+			const user_id = interaction.user.id;
 
-				if (sorted_users.length > 1) {
-					for (let i = 1; i < sorted_users.length; ++i) {
-						if (sorted_users[i][0] == user_id && sorted_users[i][1] == prev_score) {
-							if (sorted_users[i-1][0] != user_id) {
-								nextUserID = sorted_users[i-1][0];
-								nextUserScore = sorted_users[i-1][1]; 
-								break;
-							} else if (sorted_users[i+1][0] != user_id && sorted_users[i+1][1] == prev_score) {
-								nextUserID = sorted_users[i+1][0];
-								nextUserScore = sorted_users[i+1][1];
-							}
-						} else {
-							// user is the highest score already
-							nextUserID = user_id;
-							nextUserScore = 0;
+			const extractResponse = await fetch(`${API_BASE_URL}/leetcode/extract-problem?link=${encodeURIComponent(user_link)}`);
+			if (!extractResponse.ok) {
+				interaction.followUp(`Link ${user_link} is in the wrong format, resubmit the link that contains the submission ID`);
+				return;
+			}
+			const extractData = await extractResponse.json();
+			const problem_name = extractData.problem;
+
+			if (!problem_name || problem_name === "") {
+				interaction.followUp(`Link ${user_link} is in the wrong format, resubmit the link that contains the submission ID`);
+				return;
+			}
+
+			const problemsResponse = await fetch(`${API_BASE_URL}/problems?server_id=${server_id}&user_id=${user_id}`);
+			if (!problemsResponse.ok) {
+				interaction.followUp('Failed to fetch your problems. Please try again.');
+				return;
+			}
+			const problemsData = await problemsResponse.json();
+			console.log('problems:', problemsData);
+			const problems = (problemsData || []).map(p => p.problem);
+
+			if (problems.includes(problem_name)) {
+				interaction.followUp(`You've already done this problem. Nice try.`)
+				return;
+			}
+
+			const difficultyResponse = await fetch(`${API_BASE_URL}/leetcode/difficulty?link=${encodeURIComponent(user_link)}`);
+			if (!difficultyResponse.ok) {
+				interaction.followUp('Failed to fetch problem difficulty. Please try again.');
+				return;
+			}
+			const difficultyData = await difficultyResponse.json();
+			const difficulty = difficultyData.difficulty;
+
+			let score = 0;
+			if (difficulty === "Easy") {
+				score = 1;
+			} else if (difficulty === "Medium") {
+				score = 2;
+			} else {
+				score = 4;
+			}
+
+			const scoreResponse = await fetch(`${API_BASE_URL}/scores?server_id=${server_id}&user_id=${user_id}`);
+			if (!scoreResponse.ok) {
+				interaction.followUp('Failed to fetch your score. Please try again.');
+				return;
+			}
+			const scoreData = await scoreResponse.json();
+			const prev_score = scoreData.score;
+			const final_score = prev_score + score;
+
+			const leaderboardResponse = await fetch(`${API_BASE_URL}/scores/leaderboard?server_id=${server_id}`);
+			if (!leaderboardResponse.ok) {
+				interaction.followUp('Failed to fetch leaderboard. Please try again.');
+				return;
+			}
+			const leaderboard = await leaderboardResponse.json();
+
+			let nextUserScore = 0;
+			let nextUserID = user_id;
+
+			if (leaderboard && leaderboard.length > 1) {
+				for (let i = 1; i < leaderboard.length; i++) {
+					if (leaderboard[i].user_id == user_id && leaderboard[i].score == prev_score) {
+						if (leaderboard[i - 1].user_id != user_id) {
+							nextUserID = leaderboard[i - 1].user_id;
+							nextUserScore = leaderboard[i - 1].score;
+							break;
+						} else if (i + 1 < leaderboard.length && leaderboard[i + 1].user_id != user_id && leaderboard[i + 1].score == prev_score) {
+							nextUserID = leaderboard[i + 1].user_id;
+							nextUserScore = leaderboard[i + 1].score;
 						}
 					}
 				}
-			} 
+			}
+
+	    await fetch(`${API_BASE_URL}/scores`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({
+		    server_id: server_id,
+		    user_id: user_id,
+		    score: final_score
+		})
+	    });
+
+	    await fetch(`${API_BASE_URL}/problems`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({
+		    server_id: server_id,
+		    user_id: user_id,
+		    link: user_link,
+		    problem: problem_name
+		})
+	    });
+
+			if (prev_score <= nextUserScore && nextUserScore < final_score) {
+				try {
+					const nextUser = await interaction.client.users.fetch(nextUserID);
+					interaction.followUp(`${difficulty} problem submitted. \n${interaction.user.username} has taken ${nextUser.username}'s place with new score ${final_score}!`);
+				} catch (error) {
+					console.error('error fetching username', error);
+					interaction.followUp(`${difficulty} problem submitted. \n${interaction.user.username}'s score is now ${final_score}!`);
+				}
+			} else {
+				interaction.followUp(`${difficulty} problem submitted. \n${interaction.user.username}'s score is now ${final_score}!`);
+			}
 		} catch (error) {
 			console.log(error);
-			interaction.followUp('Internal error with data retrieval');
+			interaction.followUp('Could not submit problem, please try again');
 		}
-
-		// update the score:
-		await update_score(server_id, user_id, final_score, table_scores);
-		await add_problem(server_id, user_id, user_link, problem_name, table);
-		
-		if (prev_score <= nextUserScore && nextUserScore < final_score) {
-			try {
-				console.log('fetching with ID:', nextUserID);
-				const nextUser = await interaction.client.users.fetch(nextUserID);
-				interaction.followUp(`${difficulty} problem submitted. \n${interaction.user.username} has taken ${nextUser}'s place with new score ${final_score}!`);
-			} catch (error) {
-				console.error('error fetching username', error);
-				interaction.followUp('Error with username fetching');
-			}
-		} else {
-			interaction.followUp(`${difficulty} problem submitted. \n${interaction.user.username}'s score is now ${final_score}!`);
-		}
-	} catch (error) {
-		console.log(error);
-		interaction.followUp('Could not submit problem, please try again');
-	}
 	}
 }

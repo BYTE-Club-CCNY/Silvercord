@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
-const path = require('node:path');
-const { register_lc } = require('../../../api/dynamo_helper');
+
+const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8080';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -18,12 +18,21 @@ module.exports = {
         const user_id = interaction.user.id;
         await interaction.deferReply();
         try {
-            const table = "leetboard"
-            const registered = await register_lc(server_id, user_id, input_username, table)
-            if (!registered) {
+            const response = await fetch(`${API_BASE_URL}/users/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    server_id: server_id,
+                    user_id: user_id,
+                    username: input_username
+                })
+            });
+
+            if (!response.ok) {
                 interaction.followUp(`Failed to register user ${input_username}. Please try again`);
                 return;
-            } 
+            }
+
             interaction.followUp(`Successfully registered user ${input_username}`);
         } catch (error) {
             console.log(error);

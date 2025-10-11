@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { get_online_username } = require('../../../api/helper');
-const { get_username } = require('../../../api/dynamo_helper');
-// const path = require('node:path');
+
+const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8080';
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -14,13 +13,29 @@ module.exports = {
         user_id = interaction.user.id;
         await interaction.deferReply();
         try {
-            const table = "leetboard"
-            const username = await get_username(server_id, user_id, table);
-            if (username === null) {
-                interaction.followUp('You are not registered! Do /register to view your online LeetCode stats!');
-                return ;
+            const usernameResponse = await fetch(`${API_BASE_URL}/users/username?server_id=${server_id}&user_id=${user_id}`);
+            
+            if (!usernameResponse.ok) {
+                interaction.followUp('Failed to fetch your username. Please try again.');
+                return;
             }
-            const data = await get_online_username(username);
+
+            const usernameData = await usernameResponse.json();
+            const username = usernameData.username;
+
+            if (!username || username === "") {
+                interaction.followUp('You are not registered! Do /register to view your online LeetCode stats!');
+                return;
+            }
+
+            const statsResponse = await fetch(`${API_BASE_URL}/leetcode/user?username=${username}`);
+            
+            if (!statsResponse.ok) {
+                await interaction.followUp(`Could not retrieve ${username} LeetCode stats. Please make sure your username is correct!`);
+                return;
+            }
+
+            const data = await statsResponse.json();
             console.log(data);
             if (!data || !data.submitStats || !Array.isArray(data.submitStats.acSubmissionNum)) {
                 await interaction.followUp(
