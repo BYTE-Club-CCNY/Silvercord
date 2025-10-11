@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/supabase-community/postgrest-go"
 	"github.com/supabase-community/supabase-go"
 )
 
@@ -29,7 +30,12 @@ func (h *Handler) GetScore(w http.ResponseWriter, r *http.Request) {
 		season = utils.CURRENT_SEASON
 	}
 
-	var scores []GetScoreResponse
+	var rawScores []struct {
+		ServerID int64 `json:"server_id"`
+		UserID   int64 `json:"user_id"`
+		Season   int   `json:"season"`
+		Score    int   `json:"score"`
+	}
 
 	query := h.client.From(utils.LEETBOARD_SCORES_TABLE).
 		Select("server_id, user_id, season, score", "", false).
@@ -37,27 +43,30 @@ func (h *Handler) GetScore(w http.ResponseWriter, r *http.Request) {
 		Eq("user_id", userID).
 		Eq("season", season)
 
-	_, err := query.ExecuteTo(&scores)
+	_, err := query.ExecuteTo(&rawScores)
 	if err != nil {
 		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful")
 		return
 	}
 
-	if len(scores) == 0 {
-		serverIDInt, _ := strconv.ParseInt(serverID, 10, 64)
-		userIDInt, _ := strconv.ParseInt(userID, 10, 64)
+	if len(rawScores) == 0 {
 		seasonInt, _ := strconv.Atoi(season)
 
 		utils.WriteJSONResponse(w, GetScoreResponse{
-			ServerID: serverIDInt,
-			UserID:   userIDInt,
+			ServerID: serverID,
+			UserID:   userID,
 			Season:   seasonInt,
 			Score:    0,
 		}, http.StatusOK)
 		return
 	}
 
-	utils.WriteJSONResponse(w, scores[0], http.StatusOK)
+	utils.WriteJSONResponse(w, GetScoreResponse{
+		ServerID: strconv.FormatInt(rawScores[0].ServerID, 10),
+		UserID:   strconv.FormatInt(rawScores[0].UserID, 10),
+		Season:   rawScores[0].Season,
+		Score:    rawScores[0].Score,
+	}, http.StatusOK)
 }
 
 func (h *Handler) UpdateScore(w http.ResponseWriter, r *http.Request) {
@@ -74,9 +83,12 @@ func (h *Handler) UpdateScore(w http.ResponseWriter, r *http.Request) {
 	}
 
 	currentSeason, _ := strconv.Atoi(utils.CURRENT_SEASON)
+	serverIDInt, _ := strconv.ParseInt(request.ServerID, 10, 64)
+	userIDInt, _ := strconv.ParseInt(request.UserID, 10, 64)
+
 	upsertData := map[string]interface{}{
-		"server_id": request.ServerID,
-		"user_id":   request.UserID,
+		"server_id": serverIDInt,
+		"user_id":   userIDInt,
 		"season":    currentSeason,
 		"score":     request.Score,
 	}
@@ -91,4 +103,41 @@ func (h *Handler) UpdateScore(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteSuccessResponse(w, "Success")
+}
+
+func (h *Handler) GetLeaderboard(w http.ResponseWriter, r *http.Request) {
+	serverID := r.URL.Query().Get("server_id")
+	season := r.URL.Query().Get("season")
+
+	if season == "" {
+		season = utils.CURRENT_SEASON
+	}
+
+	var scores []LeaderboardRow
+
+	var rawScores []struct {
+		UserID int64 `json:"user_id"`
+		Score  int   `json:"score"`
+	}
+
+	query := h.client.From(utils.LEETBOARD_SCORES_TABLE).
+		Select("user_id, score", "", false).
+		Eq("server_id", serverID).
+		Eq("season", season).
+		Order("score", &postgrest.OrderOpts{Ascending: false})
+
+	_, err := query.ExecuteTo(&rawScores)
+	if err != nil {
+		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful: "+err.Error())
+		return
+	}
+
+	for _, raw := range rawScores {
+		scores = append(scores, LeaderboardRow{
+			UserID: strconv.FormatInt(raw.UserID, 10),
+			Score:  raw.Score,
+		})
+	}
+
+	utils.WriteJSONResponse(w, scores, http.StatusOK)
 }
