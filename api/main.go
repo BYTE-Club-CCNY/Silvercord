@@ -29,6 +29,12 @@ func main() {
 	}
 	r := routes.SetupRoutes(client)
 
+	// for Render:
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
 	fmt.Println("Listening on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
