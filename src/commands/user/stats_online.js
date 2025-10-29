@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+require('dotenv').config();
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8080';
 
@@ -9,8 +10,8 @@ module.exports = {
 
     async execute(interaction) {
         if (!interaction.isChatInputCommand()) return;
-        server_id = interaction.guild.id;
-        user_id = interaction.user.id;
+        const server_id = interaction.guild.id;
+        const user_id = interaction.user.id;
         await interaction.deferReply();
         try {
             const usernameResponse = await fetch(`${API_BASE_URL}/users/username?server_id=${server_id}&user_id=${user_id}`);

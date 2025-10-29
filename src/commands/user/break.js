@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const path = require('node:path');
 const { execFile } = require('child_process');
+require('dotenv').config();
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -33,7 +34,7 @@ module.exports = {
             
             const {name, link, response} = JSON.parse(stdout.trim());
             const file = new AttachmentBuilder("./src/assets/calendar.jpg");
-            embed = new EmbedBuilder()
+            const embed = new EmbedBuilder()
                 .setColor('#0099ff')
                 .setTitle(name)
                 .setURL(link)

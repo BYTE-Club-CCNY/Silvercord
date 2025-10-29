@@ -37,7 +37,7 @@ module.exports = {
             const {name, link, response} = JSON.parse(stdout.trim());
             // console.log(`Professor: ${name}, Link: ${link}, Response: ${response}`);
             const file = new AttachmentBuilder("./src/assets/chicken.png");
-            embed = new EmbedBuilder()
+            const embed = new EmbedBuilder()
                 .setColor('#0099ff')
                 .setTitle(name)
                 .setURL(link)

@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+require('dotenv').config();
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:8080';
+const BASE_URL = process.env.API_BASE_URL || 'http://localhost:8080';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -54,7 +55,7 @@ module.exports = {
                     leaderboard_text += `${sorted_users[i][0]} - ${sorted_users[i][1]}\n`;
                 }
             }
-            embed = new EmbedBuilder()
+            const embed = new EmbedBuilder()
                 .setColor('#0099ff')
                 .setTitle("Highest LeetCode Scores (Season 3, Oct 1 - Dec 31)")
                 .setDescription(leaderboard_text)

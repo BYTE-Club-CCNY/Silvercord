@@ -19,8 +19,6 @@ func main() {
 	supabaseUrl := os.Getenv("SUPABASE_URL_PRIVATE")
 	supabaseAnonKey := os.Getenv("SUPABASE_KEY_PRIVATE")
 
-	fmt.Println("supabaseUrl: ", supabaseUrl)
-	fmt.Println("supabaseAnonKey: ", supabaseAnonKey)
 	client, err2 := supabase.NewClient(
 		supabaseUrl,
 		supabaseAnonKey,
@@ -30,12 +28,6 @@ func main() {
 		log.Fatal("Error creating Supabase client: ", err2)
 	}
 	r := routes.SetupRoutes(client)
-
-	// for Render:
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
 
 	fmt.Println("Listening on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", r))
