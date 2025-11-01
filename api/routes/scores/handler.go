@@ -93,12 +93,16 @@ func (h *Handler) UpdateScore(w http.ResponseWriter, r *http.Request) {
 		"score":     request.Score,
 	}
 
+	// NOTE, this must be within our constraints in the SQL table for the below to work on conflict:
+	// ALTER TABLE [table name here]
+	// ADD CONSTRAINT [constraint name here]
+	// UNIQUE ([rows here]);
 	query := h.client.From(utils.LEETBOARD_SCORES_TABLE).
-		Upsert(upsertData, "", "representation", "")
+		Upsert(upsertData, "server_id, user_id, season", "", "")
 	_, _, err := query.Execute()
 
 	if err != nil {
-		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful")
+		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful: "+err.Error())
 		return
 	}
 

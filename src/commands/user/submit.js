@@ -1,4 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
+require('dotenv').config();
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8080';
 
@@ -99,26 +100,26 @@ module.exports = {
 				}
 			}
 
-	    await fetch(`${API_BASE_URL}/scores`, {
+		await fetch(`${API_BASE_URL}/scores`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({
-		    server_id: server_id,
-		    user_id: user_id,
-		    score: final_score
+			server_id: server_id,
+			user_id: user_id,
+			score: final_score
 		})
-	    });
+		});
 
-	    await fetch(`${API_BASE_URL}/problems`, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({
-		    server_id: server_id,
-		    user_id: user_id,
-		    link: user_link,
-		    problem: problem_name
-		})
-	    });
+			await fetch(`${API_BASE_URL}/problems`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					server_id: server_id,
+					user_id: user_id,
+					link: user_link,
+					problem: problem_name
+				})
+			});
 
 			if (prev_score <= nextUserScore && nextUserScore < final_score) {
 				try {
