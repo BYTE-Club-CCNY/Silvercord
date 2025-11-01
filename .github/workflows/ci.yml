@@ -1,4 +1,4 @@
-name: CI & Lint/Build
+name: Lint
 
 on:
   pull_request:
