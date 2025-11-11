@@ -3,6 +3,7 @@ package users
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/utils"
 
@@ -64,9 +65,12 @@ func (h *Handler) RegisterLCUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	serverIDInt, _ := strconv.ParseInt(request.ServerID, 10, 64)
+	userIDInt, _ := strconv.ParseInt(request.UserID, 10, 64)
+
 	upsertData := map[string]interface{}{
-		"server_id":         request.ServerID,
-		"user_id":           request.UserID,
+		"server_id":         serverIDInt,
+		"user_id":           userIDInt,
 		"leetcode_username": request.Username,
 	}
 

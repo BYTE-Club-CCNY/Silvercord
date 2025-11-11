@@ -18,8 +18,12 @@ result
 
 # Editors / OS
 .DS_Store
+<<<<<<< HEAD
 .vscode/
 .idea/
 
 # environment files
 .env
+
+## for client Discord side:
+.env.client

@@ -1,8 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { DynamoDBClient, QueryCommand } = require("@aws-sdk/client-dynamodb");
-const { dynamoConfig } = require('../../../api/aws-config');
-const client = new DynamoDBClient(dynamoConfig);
-const path = require('node:path');
+require('dotenv').config();
+
+const BASE_URL = process.env.API_BASE_URL || 'http://localhost:8080';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -13,28 +12,37 @@ module.exports = {
         await interaction.deferReply();
         try {
             const server_id = interaction.guild.id;
-            const table_scores = "leetboard_scores"
-            const query = {
-                "TableName": table_scores,
-                "KeyConditionExpression": "server_id = :server_id",
-                "ExpressionAttributeValues": {
-                    ":server_id": { S: server_id }
-            },
-                "ProjectionExpression": "score, user_id"
-            };
-            const command = new QueryCommand(query);
-            const response = await client.send(command);
-            const items = response.Items || [];
-            if (items.length === 0) {
-                await interaction.followUp('No leaderboard data to be retrieved'); return;
+            const response = await fetch(`${BASE_URL}/scores/leaderboard?server_id=${server_id}`);
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch leaderboard');
             }
-            const sorted_users = await Promise.all(
-                items.map(async item => {
-                    const user = await interaction.client.users.fetch(item.user_id.S);
-                    return [user.username, parseInt(item.score.N, 10)];
+
+            const scores = await response.json();
+            
+            if (scores.length === 0) {
+                await interaction.followUp('No leaderboard data to be retrieved'); 
+                return;
+            }
+
+            const userResults = await Promise.all(
+                scores.map(async item => {
+                    try {
+                        const user = await interaction.client.users.fetch(item.user_id);
+                        return [user.username, item.score];
+                    } catch (error) {
+                        console.error(`Failed to fetch user ${item.user_id}:`, error.message);
+                        return null;
+                    }
                 })
             );
-            sorted_users.sort((a, b) => b[1] - a[1]);
+            const sorted_users = userResults.filter(user => user !== null);
+            
+            if (sorted_users.length === 0) {
+                await interaction.followUp('No valid users found on the leaderboard.');
+                return;
+            }
+            
             let leaderboard_text = ""
             for (let i=0; i<sorted_users.length; i++) {
                 if (i===0) {
@@ -47,9 +55,9 @@ module.exports = {
                     leaderboard_text += `${sorted_users[i][0]} - ${sorted_users[i][1]}\n`;
                 }
             }
-            embed = new EmbedBuilder()
+            const embed = new EmbedBuilder()
                 .setColor('#0099ff')
-                .setTitle("Highest LeetCode Scores (Season 2, Jan23 - May24)")
+                .setTitle("Highest LeetCode Scores (Season 3, Oct 1 - Dec 31)")
                 .setDescription(leaderboard_text)
 
             console.log(sorted_users);

@@ -1,15 +1,13 @@
 package routes
 
 import (
-	"net/http"
-
 	grpcClient "github.com/BYTE-Club-CCNY/Silvercord/api/grpc"
 	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/leetcode_graphql"
 	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/problems"
 	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/professor"
 	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/scores"
 	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/users"
-
+	"net/http"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/supabase-community/supabase-go"
@@ -35,6 +33,7 @@ func SetupRoutes(client *supabase.Client, llmClient *grpcClient.LLMClient) *chi.
 	r.Route("/scores", func(r chi.Router) {
 		r.Get("/", scoresHandler.GetScore)
 		r.Post("/", scoresHandler.UpdateScore)
+		r.Get("/leaderboard", scoresHandler.GetLeaderboard)
 	})
 
 	usersHandler := users.NewHandler(client)
