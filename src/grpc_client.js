@@ -1,11 +1,7 @@
 // src/grpc_client.js
-import grpc from "@grpc/grpc-js";
-import protoLoader from "@grpc/proto-loader";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const grpc = require("@grpc/grpc-js");
+const protoLoader = require("@grpc/proto-loader");
+const path = require("path");
 
 const PROTO_PATH = path.join(__dirname, "../proto/llm.proto");
 
@@ -17,26 +13,27 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   oneofs: true,
 });
 
-const llmProto = grpc.loadPackageDefinition(packageDefinition).silvercord;
+const llmProto = grpc.loadPackageDefinition(packageDefinition).llm;
 
 const client = new llmProto.LLMService(
   "localhost:50051",
   grpc.credentials.createInsecure(),
 );
 
-export function processLLMRequest(userId, query) {
+function processLLMRequest(userId, query) {
   return new Promise((resolve, reject) => {
     client.ProcessRequest({ user_id: userId, query }, (err, response) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(response);
-      }
+      if (err) reject(err);
+      else resolve(response);
     });
   });
 }
 
-export function streamLLMRequest(userId, query) {
-  const stream = client.StreamRequest({ user_id: userId, query });
-  return stream;
+function streamLLMRequest(userId, query) {
+  return client.StreamRequest({ user_id: userId, query });
 }
+
+module.exports = {
+  processLLMRequest,
+  streamLLMRequest,
+};
