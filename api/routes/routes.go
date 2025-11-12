@@ -1,18 +1,19 @@
 package routes
 
 import (
-	leetcode_graphql "main/routes/leetcode_graphql"
-	problems "main/routes/problems"
-	scores "main/routes/scores"
-	users "main/routes/users"
+	grpcClient "github.com/BYTE-Club-CCNY/Silvercord/api/grpc"
+	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/leetcode_graphql"
+	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/problems"
+	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/professor"
+	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/scores"
+	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/users"
 	"net/http"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/supabase-community/supabase-go"
 )
 
-func SetupRoutes(client *supabase.Client) *chi.Mux {
+func SetupRoutes(client *supabase.Client, llmClient *grpcClient.LLMClient) *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Logger)
@@ -46,6 +47,11 @@ func SetupRoutes(client *supabase.Client) *chi.Mux {
 		r.Get("/user", leetcodeHandler.GetOnlineUsername)
 		r.Get("/difficulty", leetcodeHandler.GetDifficulty)
 		r.Get("/extract-problem", leetcodeHandler.ExtractProblem)
+	})
+
+	professorHandler := professor.NewHandler(llmClient)
+	r.Route("/professor", func(r chi.Router) {
+		r.Post("/", professorHandler.GetProfessorInfo)
 	})
 
 	return r

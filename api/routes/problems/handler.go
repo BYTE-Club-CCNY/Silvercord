@@ -2,11 +2,9 @@ package problems
 
 import (
 	"encoding/json"
+	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/utils"
 	"strconv"
-
-	"main/routes/utils"
 	"net/http"
-
 	"github.com/go-playground/validator/v10"
 	"github.com/supabase-community/supabase-go"
 )
