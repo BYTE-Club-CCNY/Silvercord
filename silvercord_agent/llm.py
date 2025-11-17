@@ -66,8 +66,6 @@ def build_rag_chain(command, api_key):
             "\n\n"
             "{context}"
         )
-        # "Special case: If asked about Gertner in the context, try to talk like he does "
-        # "in your response. Here's how he sounds like usually: zere iz alwayz another courze."
     else:
         current_date = datetime.now().date()
         query = (

@@ -119,8 +119,8 @@ def vector_store(embeddings_in, data_list, prof_id_in, prof_name_in):
     return collection
 
 if __name__ == '__main__':
-    url = 'https://www.ratemyprofessors.com/professor/432142'
-    prof_name = "Douglas Troeger"
+    url = 'https://www.ratemyprofessors.com/professor/2380866'
+    prof_name = "Erik Grimmelman"
     
     print(f"Fetching data for {prof_name}...")
     html = extract_page_html(url)
