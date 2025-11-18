@@ -16,26 +16,25 @@ module.exports = {
         const profName = interaction.options.getString('professor') ?? 'No professor provided';
 
         await interaction.deferReply();
-
-        const pythonScriptPath = path.resolve(__dirname, '../../../llm.py');
+        const venvPath = path.resolve(__dirname, '../../../silvercord_agent/venv/Scripts/python.exe');
+        const pythonScriptPath = path.resolve(__dirname, '../../../silvercord_agent/agent.py');
         const prof_string = "professor"
-        
-        execFile('python3', [pythonScriptPath, prof_string, profName], (error, stdout, stderr) => {
+
+        // example: `python3 ../agent.py professor Douglas Troeger
+        execFile(venvPath, [pythonScriptPath, prof_string, profName], (error, stdout, stderr) => {
             if (error) {
                 console.error("Error running LLM:", error);
-                interaction.followUp(`Failed to get information about Professor ${profName}.`);
+                interaction.followUp(`Our agent is currently unavailable. Please try again later!`);
+                return;
+            }
+
+            if (stderr) {
+                console.error("Python script stderr:", stderr);
+                interaction.followUp(`Internal error retrieving info about Professor ${profName}.`);
                 return;
             }
             
-            // TODO: Handle stderr
-            if (stderr) {
-                console.error("Python script stderr:", stderr);
-                // interaction.followUp(`Could not retrieve information about Professor ${profName}.`);
-                // return;
-            }
-            
             const {name, link, response} = JSON.parse(stdout.trim());
-            // console.log(`Professor: ${name}, Link: ${link}, Response: ${response}`);
             const file = new AttachmentBuilder("./src/assets/chicken.png");
             const embed = new EmbedBuilder()
                 .setColor('#0099ff')

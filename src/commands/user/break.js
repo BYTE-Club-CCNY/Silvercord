@@ -18,10 +18,11 @@ module.exports = {
 
         await interaction.deferReply();
 
-        const pythonScriptPath = path.resolve(__dirname, '../../../llm.py');
+        const venvPath = path.resolve(__dirname, '../../../silvercord_agent/venv/Scripts/python.exe');
+        const pythonScriptPath = path.resolve(__dirname, '../../../silvercord_agent/agent.py');
         const break_string = "break"
 
-        execFile('python', [pythonScriptPath, break_string, query], (error, stdout, stderr) => {
+        execFile(venvPath, [pythonScriptPath, break_string, query], (error, stdout, stderr) => {
             if (error) {
                 console.error("Error running LLM:", error);
                 interaction.followUp(`Failed to get information about ${query}.`);

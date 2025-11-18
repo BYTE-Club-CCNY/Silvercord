@@ -1,4 +1,7 @@
 import os
+import sys
+import json
+
 import chromadb
 import cohere
 from dotenv import load_dotenv
@@ -8,7 +11,10 @@ from openai import OpenAI
 load_dotenv()
 COHERE_KEY = os.getenv("COHERE_KEY")
 OPENAI_KEY = os.getenv("OPEN_AI_KEY")
-chroma_client = chromadb.PersistentClient(path="./chroma_db")
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+CHROMA_DB_PATH = os.path.join(SCRIPT_DIR, "chroma_db")
+
+chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
 co = cohere.ClientV2(api_key=COHERE_KEY)
 oai = OpenAI(api_key=OPENAI_KEY)
 embedding_model = "embed-v4.0"
@@ -63,10 +69,8 @@ def retrieve_data(query_in: str, prof_name_input: str, n_results: int = 10):
     matched_prof, score = fuzzy_match(prof_name_input, stored_professors)
 
     if matched_prof:
-        print(f"MATCHED '{prof_name_input}' to '{matched_prof}' (score: {score:.2f})")
         prof_name = matched_prof
     else:
-        print(f"No match, score: {score:.2f}")
         prof_name = None
 
     embed_query = co.embed(
@@ -125,10 +129,27 @@ def build_rag_response(query: str, professor: str):
 
 
 if __name__ == "__main__":
-    professor = " Troeger"
-    question = "How is the following professor?"
-
-    answer = build_rag_response(question, professor)
-    print(f"\nQuestion: {question}")
-    print(f"Professor: {professor}")
-    print(f"\nAnswer:\n{answer}")
+    answer = ""
+    question = ""
+    output = ""
+    command_arg = sys.argv[1]
+    if command_arg == "professor":
+        question = "How is the following professor?"
+        f_name = sys.argv[2]
+        s_name = ""
+        if len(sys.argv) > 3:
+            s_name = sys.argv[3]
+        full_name = f_name + " " + s_name
+        answer = build_rag_response(question, full_name)
+        output = {
+            "name": full_name,
+            "link": f"https://www.ratemyprofessors.com/search/professors?q={full_name.replace(' ', '%20')}",
+            "response": answer
+        }
+    elif command_arg == "break":
+        output = {
+            "name": "Calendar",
+            "link": "",
+            "response": "This command is under maintenance. Stay tuned!"
+        }
+    print(json.dumps(output))
