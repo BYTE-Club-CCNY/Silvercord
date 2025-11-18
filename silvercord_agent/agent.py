@@ -14,15 +14,42 @@ oai = OpenAI(api_key=OPENAI_KEY)
 embedding_model = "embed-v4.0"
 
 
-def fuzzy_match(query_name: str, known_names: list, threshold: float = 0.7):
+def fuzzy_match(query_name: str, stored_names: list, threshold: float = 0.7):
+    '''
+    below tries to ensure to try to match for two cases:
+    user puts in full name: regular case, tries to match exact name
+    user puts in just 1 word (either first name or last name), and sequence matches with
+    each full name's first name then last name individually
+    EXAMPLE: query_name: Troeger; full_name in stored_names: Douglas Troeger -> MATCH
+    '''
+
     best_match = None
     best_score = 0
 
-    for name in known_names:
-        score = SequenceMatcher(None, query_name.lower(), name.lower()).ratio()
+    query_clean = query_name.strip().lower()
+
+    for full_name in stored_names:
+        full_name_lower = full_name.lower()
+
+        score = SequenceMatcher(None, query_clean, full_name_lower).ratio()
         if score > best_score and score >= threshold:
             best_score = score
-            best_match = name
+            best_match = full_name
+
+        name_parts = full_name.split()
+        if len(name_parts) >= 2:
+            first_name = name_parts[0].lower()
+            last_name = name_parts[-1].lower()
+
+            first_score = SequenceMatcher(None, query_clean, first_name).ratio()
+            if first_score > best_score and first_score >= threshold:
+                best_score = first_score
+                best_match = full_name
+
+            last_score = SequenceMatcher(None, query_clean, last_name).ratio()
+            if last_score > best_score and last_score >= threshold:
+                best_score = last_score
+                best_match = full_name
 
     return best_match, best_score
 
@@ -99,7 +126,7 @@ def build_rag_response(query: str, professor: str):
 
 if __name__ == "__main__":
     professor = " Troeger"
-    question = "How is his teaching style?"
+    question = "How is the following professor?"
 
     answer = build_rag_response(question, professor)
     print(f"\nQuestion: {question}")
