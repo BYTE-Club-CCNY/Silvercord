@@ -35,4 +35,3 @@ type GetDifficultyResponse struct {
 type ExtractProblemResponse struct {
 	Problem string `json:"problem"`
 }
-

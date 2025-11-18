@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -27,6 +27,20 @@ jobs:
           script: |
             cd ~/Repositories/Silvercord/
             git pull origin main
+
+            # Install Node.js dependencies
             npm install
-            pm2 restart silvercord
+
+            # Build Go server
+            cd api
+            go build -o main .
+            cd ..
+
+            # Install Python dependencies
+            cd silvercord_agent
+            pip3 install -r requirements.txt
+            cd ..
+
+            # Restart all services using PM2 ecosystem
+            pm2 reload ecosystem.config.js --update-env
             echo "Deployment Successful"
