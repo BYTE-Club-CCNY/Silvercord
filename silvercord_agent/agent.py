@@ -128,6 +128,17 @@ def build_rag_response(query: str, professor: str):
     return response.choices[0].message.content
 
 
+def demo():
+    # alternatively, run this locally to test out, commenting out what is under the main guard below
+    professor_demo = "Troeger"
+    question_demo = "How is his teaching style?"
+
+    answer_demo = build_rag_response(question_demo, professor_demo)
+    print(f"\nQuestion: {question_demo}")
+    print(f"Professor: {professor_demo}")
+    print(f"\nAnswer:\n{answer_demo}")
+
+
 if __name__ == "__main__":
     answer = ""
     question = ""
@@ -149,7 +160,8 @@ if __name__ == "__main__":
     elif command_arg == "break":
         output = {
             "name": "Calendar",
-            "link": "",
+            "link": "None",
             "response": "This command is under maintenance. Stay tuned!"
         }
     print(json.dumps(output))
+

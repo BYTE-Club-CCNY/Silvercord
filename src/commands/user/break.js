@@ -8,8 +8,8 @@ module.exports = {
         .setName('break')
         .setDescription('Returns information about CUNYs academic calendar')
         .addStringOption(option => option
-            .setName('2024-2025')
-            .setDescription('2024-2025 CUNYs academic schedule')
+            .setName('2025-2026')
+            .setDescription('2025-2026 CUNYs academic schedule')
             .setRequired(true)),
         
     async execute(interaction) {
@@ -34,6 +34,10 @@ module.exports = {
             }
             
             const {name, link, response} = JSON.parse(stdout.trim());
+            if (link === "None") {
+                interaction.followUp(response);
+                return;
+            }
             const file = new AttachmentBuilder("./src/assets/calendar.jpg");
             const embed = new EmbedBuilder()
                 .setColor('#0099ff')
