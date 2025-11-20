@@ -8,7 +8,9 @@ import re
 
 load_dotenv()
 COHERE_KEY = os.getenv("COHERE_KEY")
-chroma_client = chromadb.PersistentClient(path="./chroma_db")
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+CHROMA_DB_PATH = os.path.join(SCRIPT_DIR, "chroma_db")
+chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
 co = cohere.ClientV2(api_key=COHERE_KEY)
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -23,14 +25,15 @@ input_type = "search_document"
 CHUNK_SIZE = 400
 CHUNK_OVERLAP = 50
 
+
 def extract_page_html(url_in: str):
     try:
         response = requests.get(url_in, headers=headers, timeout=10)
         response.raise_for_status()
         return response.text
     except requests.RequestException as e:
-        print(f"Error fetching URL due to error: {e}")
         return None
+
 
 def extract_prof_reviews(html_in, prof_name_in):
     soup = BeautifulSoup(html_in, 'html.parser')
@@ -59,6 +62,7 @@ def extract_prof_reviews(html_in, prof_name_in):
     
     return reviews_list
 
+
 def chunk_text(text, chunk_size=CHUNK_SIZE, overlap=CHUNK_OVERLAP):
     chunks = []
     start = 0
@@ -75,6 +79,7 @@ def chunk_text(text, chunk_size=CHUNK_SIZE, overlap=CHUNK_OVERLAP):
     
     return chunks if chunks else [text]
 
+
 def embed(content):
     if not content:
         return None
@@ -86,6 +91,7 @@ def embed(content):
         embedding_types=["float"]
     )
     return embed_response
+
 
 def vector_store(embeddings_in, data_list, prof_id_in, prof_name_in):
     try:
@@ -99,7 +105,6 @@ def vector_store(embeddings_in, data_list, prof_id_in, prof_name_in):
     )
     
     if existing['ids']:
-        print(f"Professor ID {prof_id_in} already exists in database. Skipping.")
         return collection
     
     collection.add(
@@ -115,29 +120,21 @@ def vector_store(embeddings_in, data_list, prof_id_in, prof_name_in):
         } for i, c in enumerate(data_list)],
     )
     
-    print(f"Stored {len(data_list)} chunks for {prof_name_in} (ID: {prof_id_in})")
     return collection
 
-if __name__ == '__main__':
-    url = 'https://www.ratemyprofessors.com/professor/2380866'
-    prof_name = "Erik Grimmelman"
-    
-    print(f"Fetching data for {prof_name}...")
-    html = extract_page_html(url)
-    
+
+def process_professor(prof_url, prof_name_in):
+    html = extract_page_html(prof_url)
+
     if not html:
-        print("Failed to fetch page")
-        exit(1)
-    
-    prof_id = url.split('/')[-1]
-    reviews = extract_prof_reviews(html, prof_name)
-    
+        return False
+
+    prof_id = prof_url.split('/')[-1]
+    reviews = extract_prof_reviews(html, prof_name_in)
+
     if not reviews:
-        print("No reviews found")
-        exit(1)
-    
-    print(f"Found {len(reviews)} reviews")
-    
+        return False
+
     all_chunks = []
     for review in reviews:
         chunks = chunk_text(review['content'])
@@ -146,16 +143,20 @@ if __name__ == '__main__':
                 'content': chunk,
                 'commentId': review['commentId'],
                 'source': review['source'],
-                'professor_name': prof_name
+                'professor_name': prof_name_in
             })
-    
-    print(f"Created {len(all_chunks)} chunks from {len(reviews)} reviews")
-    
+
     chunk_texts = [chunk['content'] for chunk in all_chunks]
     embeddings = embed(chunk_texts)
-    
+
     if embeddings:
-        vector_store(embeddings, all_chunks, prof_id, prof_name)
-        print("Successfully stored all chunks!")
+        vector_store(embeddings, all_chunks, prof_id, prof_name_in)
+        return True
     else:
-        print("Failed to generate embeddings")
+        return False
+
+
+if __name__ == "__main__":
+    url = 'https://www.ratemyprofessors.com/professor/2380866'
+    prof_name = "Erik Grimmelman"
+    process_professor(url, prof_name)

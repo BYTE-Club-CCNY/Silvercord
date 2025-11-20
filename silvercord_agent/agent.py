@@ -7,6 +7,8 @@ import cohere
 from dotenv import load_dotenv
 from difflib import SequenceMatcher
 from openai import OpenAI
+from rmp import get_professor_url
+from db_store import process_professor
 
 load_dotenv()
 COHERE_KEY = os.getenv("COHERE_KEY")
@@ -63,8 +65,12 @@ def fuzzy_match(query_name: str, stored_names: list, threshold: float = 0.7):
 def retrieve_data(query_in: str, prof_name_input: str, n_results: int = 10):
     collection = chroma_client.get_collection("professor_reviews")
 
-    data = collection.get(include=["metadatas"])
-    stored_professors = list(set(meta['professor_name'] for meta in data['metadatas']))
+    try:
+        data = collection.get(include=["metadatas"])
+        stored_professors = list(set(meta['professor_name'] for meta in data['metadatas'])) if data['metadatas'] else []
+    except Exception as e:
+        print(f"[DEBUG] Error getting collection data: {e}")
+        stored_professors = []
 
     matched_prof, score = fuzzy_match(prof_name_input, stored_professors)
 
@@ -93,9 +99,15 @@ def retrieve_data(query_in: str, prof_name_input: str, n_results: int = 10):
 
 def build_rag_response(query: str, professor: str):
     results, matched_prof = retrieve_data(query, professor, n_results=8)
+    professor_url = None
 
-    if not results['documents'][0]:
-        return "No information found for this professor."
+    if not matched_prof or not results['documents'][0]:
+        professor_url = get_professor_url(professor)
+        if professor_url:
+            process_professor(professor_url, professor)
+            results, matched_prof = retrieve_data(query, professor, n_results=8)
+        else:
+            return "I couldn't find information about this professor.", None
 
     context_text = "\n\n".join([
         f"Review: {doc}"
@@ -125,12 +137,12 @@ def build_rag_response(query: str, professor: str):
         max_tokens=150
     )
 
-    return response.choices[0].message.content
+    return response.choices[0].message.content, professor_url
 
 
 def demo():
     # alternatively, run this locally to test out, commenting out what is under the main guard below
-    professor_demo = "Troeger"
+    professor_demo = "Fazli"
     question_demo = "How is his teaching style?"
 
     answer_demo = build_rag_response(question_demo, professor_demo)
@@ -151,10 +163,10 @@ if __name__ == "__main__":
         if len(sys.argv) > 3:
             s_name = sys.argv[3]
         full_name = f_name + " " + s_name
-        answer = build_rag_response(question, full_name)
+        answer, originalUrl = build_rag_response(question, full_name)
         output = {
             "name": full_name,
-            "link": f"https://www.ratemyprofessors.com/search/professors?q={full_name.replace(' ', '%20')}",
+            "link": originalUrl,
             "response": answer
         }
     elif command_arg == "break":
@@ -164,4 +176,4 @@ if __name__ == "__main__":
             "response": "This command is under maintenance. Stay tuned!"
         }
     print(json.dumps(output))
-
+    # demo()

@@ -39,9 +39,12 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setColor('#0099ff')
                 .setTitle(name)
-                .setURL(link)
                 .setDescription(response)
                 .setThumbnail("attachment://chicken.png");
+            
+            if (link !== null && link !== "None") {
+                embed.setURL(link);
+            }
 
             interaction.followUp({embeds: [ embed ], files: [ file ] });
         });
