@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const path = require('node:path');
 const { execFile } = require('child_process');
+const os = require('os');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -16,7 +17,10 @@ module.exports = {
         const profName = interaction.options.getString('professor') ?? 'No professor provided';
 
         await interaction.deferReply();
-        const venvPath = path.resolve(__dirname, '../../../silvercord_agent/venv/Scripts/python.exe');
+
+        const isWindows = os.platform() === 'win32';
+        const venvSubPath = isWindows? 'Scripts/python.exe' : 'bin/python';
+        const venvPath = path.resolve(__dirname, '../../../silvercord_agent/venv', venvSubPath);
         const pythonScriptPath = path.resolve(__dirname, '../../../silvercord_agent/agent.py');
         const prof_string = "professor"
 
