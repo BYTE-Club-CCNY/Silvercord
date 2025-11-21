@@ -28,5 +28,17 @@ jobs:
             cd ~/Repositories/Silvercord/
             git pull origin main
             npm install
+            cd silvercord_agent
+            if [ ! -d "venv" ]; then
+              echo "Creating Python virtual environment..."
+              python3 -m venv venv
+            fi
+            
+            echo "Installing Python dependencies..."
+            source venv/bin/activate
+            pip install --upgraded pip
+            pip install -r requirements.txt
+            deactivate
+            cd ..
             pm2 restart silvercord
             echo "Deployment Successful"
