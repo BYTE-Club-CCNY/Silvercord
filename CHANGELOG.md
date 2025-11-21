@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/BYTE-Club-CCNY/Silvercord/compare/v2.0.0...v2.0.1) (2025-11-21)
+
+
+### Bug Fixes
+
+* os pathing incorrect ([#36](https://github.com/BYTE-Club-CCNY/Silvercord/issues/36)) ([2d56a79](https://github.com/BYTE-Club-CCNY/Silvercord/commit/2d56a79612491b97033eb1d7251196f966c39cf7))
+
 # [2.0.0](https://github.com/BYTE-Club-CCNY/Silvercord/compare/v1.0.0...v2.0.0) (2025-11-21)
 
 # 1.0.0 (2025-11-01)
