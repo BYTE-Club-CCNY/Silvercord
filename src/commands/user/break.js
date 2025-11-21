@@ -1,6 +1,4 @@
 const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
-const path = require('node:path');
-const { execFile } = require('child_process');
 require('dotenv').config();
 
 module.exports = {
@@ -8,40 +6,52 @@ module.exports = {
         .setName('break')
         .setDescription('Returns information about CUNYs academic calendar')
         .addStringOption(option => option
-            .setName('2024-2025')
-            .setDescription('2024-2025 CUNYs academic schedule')
+            .setName('query')
+            .setDescription('2025-2026 CUNYs academic schedule')
             .setRequired(true)),
         
     async execute(interaction) {
         if (!interaction.isChatInputCommand()) return;
-        const query = interaction.options.getString('2024-2025') ?? 'No break provided';
+        const query = interaction.options.getString('query') ?? 'No break provided';
 
         await interaction.deferReply();
 
-        const pythonScriptPath = path.resolve(__dirname, '../../../llm.py');
-        const break_string = "break"
+        try {
+            const response = await fetch('http://localhost:8080/break', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    query: query,
+                    user_id: interaction.user.id
+                })
+            });
 
-        execFile('python', [pythonScriptPath, break_string, query], (error, stdout, stderr) => {
-            if (error) {
-                console.error("Error running LLM:", error);
-                interaction.followUp(`Failed to get information about ${query}.`);
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("Error from Go API:", errorData);
+                await interaction.followUp(`Failed to get information about ${query}.`);
                 return;
             }
             
-            if (stderr) {
-                console.error("Python script stderr:", stderr);
+            const {name, link, response: breakResponse} = await response.json();
+            if (link === "None") {
+                interaction.followUp(breakResponse);
+                return;
             }
-            
-            const {name, link, response} = JSON.parse(stdout.trim());
             const file = new AttachmentBuilder("./src/assets/calendar.jpg");
             const embed = new EmbedBuilder()
                 .setColor('#0099ff')
                 .setTitle(name)
                 .setURL(link)
-                .setDescription(response)
+                .setDescription(breakResponse)
                 .setThumbnail("attachment://calendar.jpg");
 
             interaction.followUp({embeds: [ embed ], files: [ file ] });
-        });
+        } catch (error) {
+            console.error("Error calling Go API:", error);
+            await interaction.followUp(`Failed to get information for ${query}.`);
+        }
     }
 };

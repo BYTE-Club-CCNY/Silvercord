@@ -28,3 +28,5 @@ result
 
 ## for client Discord side:
 .env.client
+chroma_db
+silvercord_agent/chroma_db

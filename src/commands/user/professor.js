@@ -44,6 +44,10 @@ module.exports = {
                 .setURL(link)
                 .setDescription(profResponse)
                 .setThumbnail("attachment://chicken.png");
+            
+            if (link !== null && link !== "None") {
+                embed.setURL(link);
+            }
 
             await interaction.followUp({embeds: [ embed ], files: [ file ] });
         } catch (error) {

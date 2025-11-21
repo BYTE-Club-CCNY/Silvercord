@@ -20,12 +20,15 @@ const client = new llmProto.LLMService(
   grpc.credentials.createInsecure(),
 );
 
-function processLLMRequest(userId, query) {
+function processLLMRequest(userId, command, query) {
   return new Promise((resolve, reject) => {
-    client.ProcessRequest({ user_id: userId, query }, (err, response) => {
-      if (err) reject(err);
-      else resolve(response);
-    });
+    client.ProcessRequest(
+      { user_id: userId, command, query },
+      (err, response) => {
+        if (err) reject(err);
+        else resolve(response);
+      },
+    );
   });
 }
 

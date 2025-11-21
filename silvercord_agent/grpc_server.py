@@ -5,7 +5,7 @@ import grpc
 
 import llm_pb2
 import llm_pb2_grpc
-from llm import process_query
+from agent import process_query
 
 
 class LLMServiceServicer(llm_pb2_grpc.LLMServiceServicer):
