@@ -8,8 +8,8 @@ module.exports = {
         .setName('break')
         .setDescription('Returns information about CUNYs academic calendar')
         .addStringOption(option => option
-            .setName('2024-2025')
-            .setDescription('2024-2025 CUNYs academic schedule')
+            .setName('2025-2026')
+            .setDescription('2025-2026 CUNYs academic schedule')
             .setRequired(true)),
         
     async execute(interaction) {
@@ -18,10 +18,11 @@ module.exports = {
 
         await interaction.deferReply();
 
-        const pythonScriptPath = path.resolve(__dirname, '../../../llm.py');
+        const venvPath = path.resolve(__dirname, '../../../silvercord_agent/venv/Scripts/python.exe');
+        const pythonScriptPath = path.resolve(__dirname, '../../../silvercord_agent/agent.py');
         const break_string = "break"
 
-        execFile('python', [pythonScriptPath, break_string, query], (error, stdout, stderr) => {
+        execFile(venvPath, [pythonScriptPath, break_string, query], (error, stdout, stderr) => {
             if (error) {
                 console.error("Error running LLM:", error);
                 interaction.followUp(`Failed to get information about ${query}.`);
@@ -33,6 +34,10 @@ module.exports = {
             }
             
             const {name, link, response} = JSON.parse(stdout.trim());
+            if (link === "None") {
+                interaction.followUp(response);
+                return;
+            }
             const file = new AttachmentBuilder("./src/assets/calendar.jpg");
             const embed = new EmbedBuilder()
                 .setColor('#0099ff')

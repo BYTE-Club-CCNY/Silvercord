@@ -1,84 +1,162 @@
-import bs4
-import sys
 import os
-os.environ['USER_AGENT'] = 'myagent'
-from langchain_chroma import Chroma
-from langchain_openai import OpenAIEmbeddings
-from langchain_community.document_loaders import WebBaseLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+import chromadb
+import requests
+import cohere
+from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-from rmp import get_professor_url
-# basic configuration with LLM, chromadb, langchain
+import re
+
 load_dotenv()
-CHROMA_PATH = "chroma"
-OPEN_AI_KEY = os.getenv('OPEN_AI_KEY')
-embed = OpenAIEmbeddings(
-    api_key=OPEN_AI_KEY,
-    model="text-embedding-3-large"
-)
+COHERE_KEY = os.getenv("COHERE_KEY")
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+CHROMA_DB_PATH = os.path.join(SCRIPT_DIR, "chroma_db")
+chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
+co = cohere.ClientV2(api_key=COHERE_KEY)
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.5',
+    'Accept-Encoding': 'gzip, deflate',
+    'Connection': 'keep-alive',
+}
 
-# url1 = "https://www.ratemyprofessors.com/professor/2380866" 
-# pipeline function that simply takes url as data and stores content into chroma for vector searching for the LLM
-# if you're not familiar with building RAGs, the pipeline is as follows:
-  # 1. load documents (whichever type)
-  # 2. split text into multiple chunks for storing into ChromaDB
-  # 3. create a new collection with the LLM embedding function
-  # 4. store the text & metadata collected from the embedded docs into chromaDB for LLM lookup 
-def pipeline(url):
-    import asyncio
-    documents = asyncio.run(load_docs(url))
-    chunks = split_text(documents)
-    # print(f"{chunks=}")
-    # gotta be a better way of handling this exception !!
+embedding_model = "embed-v4.0"
+input_type = "search_document"
+CHUNK_SIZE = 400
+CHUNK_OVERLAP = 50
+
+
+def extract_page_html(url_in: str):
     try:
-        chroma_store(chunks, url)
-    except Exception as e:
-        print("Error occurred when vector storing: ", e)
+        response = requests.get(url_in, headers=headers, timeout=10)
+        response.raise_for_status()
+        return response.text
+    except requests.RequestException as e:
+        return None
+
+
+def extract_prof_reviews(html_in, prof_name_in):
+    soup = BeautifulSoup(html_in, 'html.parser')
+    
+    review_containers = soup.find_all('div', class_=re.compile(r'Comments__StyledComments'))
+    
+    if not review_containers:
+        review_containers = soup.find_all('div', attrs={'data-testid': re.compile(r'comment')})
+    
+    reviews_list = []
+    seen_reviews = set()
+    
+    for i, div in enumerate(review_containers):
+        review = div.get_text(separator=' ', strip=True)
         
-async def load_docs(url):
-    loader = WebBaseLoader(web_paths=[url])
-    docs = []
-    async for doc in loader.alazy_load():
-        docs.append(doc)
-    assert len(docs) == 1
-    return docs
+        review = re.sub(r'\s+', ' ', review)
+        
+        if review and len(review) > 20 and review not in seen_reviews:
+            seen_reviews.add(review)
+            reviews_list.append({
+                'content': review,
+                'commentId': i+1,
+                'source': 'ratemyprofessor',
+                'professor_name': prof_name_in
+            })
+    
+    return reviews_list
 
-def split_text(documents: list):
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1100,
-        chunk_overlap=100,
-        length_function=len,
-    )
-    chunks = text_splitter.split_documents(documents)
-    chunk_size = len(chunks)-1
-    document = chunks[chunk_size]
-    #print(document.page_content)
-    #print("<------------------------------>\n")
-    #print(document.metadata) # note that this stores the actual url as source
-    return chunks
 
-def chroma_store(chunks: list, url: str):
-    db = Chroma(
-        collection_name="silvercord",
-        embedding_function=embed,
-        persist_directory=CHROMA_PATH
+def chunk_text(text, chunk_size=CHUNK_SIZE, overlap=CHUNK_OVERLAP):
+    chunks = []
+    start = 0
+    text_len = len(text)
+    
+    while start < text_len:
+        end = start + chunk_size
+        chunk = text[start:end]
+        
+        if len(chunk.strip()) > 50:
+            chunks.append(chunk)
+        
+        start += chunk_size - overlap
+    
+    return chunks if chunks else [text]
+
+
+def embed(content):
+    if not content:
+        return None
+    
+    embed_response = co.embed(
+        texts=content,
+        model=embedding_model,
+        input_type=input_type,
+        embedding_types=["float"]
     )
-    query = db.get(include=["metadatas"], where={"source": url})
-    if query["metadatas"]:
-        # print(f"URL: {url} already exists in the database.")
-        # print(f"Query: {query}")
+    return embed_response
+
+
+def vector_store(embeddings_in, data_list, prof_id_in, prof_name_in):
+    try:
+        collection = chroma_client.create_collection(name="professor_reviews")
+    except Exception:
+        collection = chroma_client.get_collection(name="professor_reviews")
+    
+    existing = collection.get(
+        where={"professor_id": prof_id_in},
+        limit=1
+    )
+    
+    if existing['ids']:
+        return collection
+    
+    collection.add(
+        ids=[f"prof_{prof_id_in}_chunk_{i}" for i in range(len(data_list))],
+        documents=[c['content'] for c in data_list],
+        embeddings=embeddings_in.embeddings.float,
+        metadatas=[{
+            'chunk_id': i,
+            'source': c['source'],
+            'professor_name': prof_name_in,
+            'professor_id': prof_id_in,
+            'original_comment_id': c.get('commentId', -1)
+        } for i, c in enumerate(data_list)],
+    )
+    
+    return collection
+
+
+def process_professor(prof_url, prof_name_in):
+    html = extract_page_html(prof_url)
+
+    if not html:
         return False
-    else:
-        texts = [chunk.page_content for chunk in chunks]
-        metadatas = [chunk.metadata for chunk in chunks]
-        db.add_texts(texts=texts, metadatas=metadatas)
-        # print(f"Saved {len(chunks)} chunks to {CHROMA_PATH}.")
-        return True
 
-# below defines the specification:
-# arguments are taken by sys.argvs in terminal
-# example is: python db_store.py https://www.ratemyprofessors.com/professor/432142
-# above would process the parameter link as the url for chroma storing
+    prof_id = prof_url.split('/')[-1]
+    reviews = extract_prof_reviews(html, prof_name_in)
+
+    if not reviews:
+        return False
+
+    all_chunks = []
+    for review in reviews:
+        chunks = chunk_text(review['content'])
+        for chunk in chunks:
+            all_chunks.append({
+                'content': chunk,
+                'commentId': review['commentId'],
+                'source': review['source'],
+                'professor_name': prof_name_in
+            })
+
+    chunk_texts = [chunk['content'] for chunk in all_chunks]
+    embeddings = embed(chunk_texts)
+
+    if embeddings:
+        vector_store(embeddings, all_chunks, prof_id, prof_name_in)
+        return True
+    else:
+        return False
+
+
 if __name__ == "__main__":
-    url = sys.argv[1] if len(sys.argv) > 1 else "https://default_url"
-    pipeline(url)
+    url = 'https://www.ratemyprofessors.com/professor/2380866'
+    prof_name = "Erik Grimmelman"
+    process_professor(url, prof_name)
