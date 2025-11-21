@@ -1,3 +1,5 @@
+# [2.0.0](https://github.com/BYTE-Club-CCNY/Silvercord/compare/v1.0.0...v2.0.0) (2025-11-21)
+
 # 1.0.0 (2025-11-01)
 
 
