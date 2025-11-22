@@ -140,6 +140,27 @@ def build_rag_response(query: str, professor: str):
     return response.choices[0].message.content, professor_url
 
 
+def process_query(command: str, query: str):
+    answer = ""
+    output = ""
+    if command == "professor":
+        question = "How is the following professor?"
+        full_name = query
+        answer, originalUrl = build_rag_response(question, full_name)
+        output = {
+            "name": full_name,
+            "link": originalUrl,
+            "response": answer
+        }
+    elif command == "break":
+        output = {
+            "name": "Calendar",
+            "link": "None",
+            "response": "This command is under maintenance. Stay tuned!"
+        }
+    return json.dumps(output)
+
+
 def demo():
     # alternatively, run this locally to test out, commenting out what is under the main guard below
     professor_demo = "Fazli"
@@ -152,28 +173,22 @@ def demo():
 
 
 if __name__ == "__main__":
-    answer = ""
-    question = ""
-    output = ""
-    command_arg = sys.argv[1]
-    if command_arg == "professor":
-        question = "How is the following professor?"
-        f_name = sys.argv[2]
-        s_name = ""
-        if len(sys.argv) > 3:
-            s_name = sys.argv[3]
-        full_name = f_name + " " + s_name
-        answer, originalUrl = build_rag_response(question, full_name)
-        output = {
-            "name": full_name,
-            "link": originalUrl,
-            "response": answer
-        }
-    elif command_arg == "break":
-        output = {
-            "name": "Calendar",
-            "link": "None",
-            "response": "This command is under maintenance. Stay tuned!"
-        }
-    print(json.dumps(output))
-    # demo()
+    # This block is for standalone execution, for example, for testing.
+    # It mimics how the script was called before the refactoring.
+    if len(sys.argv) > 1:
+        command_arg = sys.argv[1]
+        if command_arg == "professor":
+            if len(sys.argv) > 2:
+                # Join all arguments after the command as the query
+                query_arg = " ".join(sys.argv[2:])
+                print(process_query(command_arg, query_arg))
+            else:
+                print("Professor name required.")
+        elif command_arg == "break":
+            # The break command might not need a query, or it could be a sub-command.
+            # Adjust as needed.
+            print(process_query(command_arg, ""))
+        else:
+            demo()
+    else:
+        demo()

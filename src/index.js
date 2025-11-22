@@ -33,7 +33,7 @@ for (const folder of commandFolders) {
 	}
 }
 
-client.once('ready', async () => {
+client.once(Events.ClientReady, async () => {
     console.log("Bot is ready.");
 });
 

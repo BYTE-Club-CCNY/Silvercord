@@ -2,7 +2,7 @@ package routes
 
 import (
 	grpcClient "github.com/BYTE-Club-CCNY/Silvercord/api/grpc"
-	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/break"
+	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/calendar"
 	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/leetcode_graphql"
 	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/problems"
 	"github.com/BYTE-Club-CCNY/Silvercord/api/routes/professor"
@@ -55,9 +55,9 @@ func SetupRoutes(client *supabase.Client, llmClient *grpcClient.LLMClient) *chi.
 		r.Post("/", professorHandler.GetProfessorInfo)
 	})
 
-	breakHandler := break.NewHandler(llmClient)
-	r.Route("/break", func(r chi.Router) {
-		r.Post("/", breakHandler.GetBreakInfo)
+	calendarHandler := calendar.NewHandler(llmClient)
+	r.Route("/calendar", func(r chi.Router) {
+		r.Post("/", calendarHandler.GetBreakInfo)
 	})
 
 	return r

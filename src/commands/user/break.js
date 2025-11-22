@@ -17,7 +17,7 @@ module.exports = {
         await interaction.deferReply();
 
         try {
-            const response = await fetch('http://localhost:8080/break', {
+            const response = await fetch('http://localhost:8080/calendar', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
