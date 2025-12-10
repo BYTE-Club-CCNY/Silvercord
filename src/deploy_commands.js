@@ -32,14 +32,20 @@ const rest = new REST({ version: '10' }).setToken(token);
 (async () => {
     try {
         console.log('Started refreshing application (/) commands.');
-        // console.log(commands);
-
-        await rest.put(
-            Routes.applicationGuildCommands(clientId, guildId),
-            { body: commands },
-        );
-
-        console.log('Successfully reloaded application (/) commands.');
+        if (guildId) {
+            await rest.put(
+                Routes.applicationGuildCommands(clientId, guildId),
+                { body: commands },
+            );
+            console.log(`Successfully reloaded application (/) commands for guild ${guildId}.`);
+        } else {
+            await rest.put(
+                Routes.applicationCommands(clientId),
+                { body: commands },
+            );
+            console.log('Successfully reloaded global application (/) commands.');
+            console.log('Note: Global commands may take up to 1 hour to appear in Discord.');
+        }
     } catch (error) {
         console.error(error);
     }
