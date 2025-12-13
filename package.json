@@ -15,10 +15,11 @@
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.699.0",
-    "discord.js": "^14.16.3",
+    "discord.js": "^14.25.1",
     "dotenv": "^16.4.5",
     "node-fetch": "^3.3.2",
     "nodemon": "^3.1.7",
+    "pagination.djs": "^4.0.18",
     "python-shell": "^5.0.0"
   },
   "devDependencies": {
