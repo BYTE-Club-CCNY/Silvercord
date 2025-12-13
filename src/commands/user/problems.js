@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { Pagination } = require('pagination.djs');
 require('dotenv').config();
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8080';
@@ -20,20 +21,30 @@ module.exports = {
       }
 
       const problemsData = await response.json();
-      
+
       if (!problemsData || problemsData.length === 0) {
         await interaction.reply("You haven't completed any problems yet!");
         return;
       }
-
       const problems = problemsData.map(p => p.problem);
-      
-      const embed = new EmbedBuilder()
-        .setTitle("Problems")
+      const pageSize = 25;
+      const pages = [];
+
+      for (let i = 0; i < problems.length; i += pageSize) {
+        const page = problems.slice(i, i + pageSize);
+        const embed = new EmbedBuilder()
+        .setTitle("Leetcode Problem Submission History")
         .setDescription(`List of problems done by ${interaction.user.username}`)
         .addFields({
-          name: "Problems", value: problems.join("\n")
+          name: "Problems", value: page.join("\n")
         })
-      await interaction.reply({embeds: [embed]});
+        .setFooter({ text: `Page ${i / pageSize + 1} of ${Math.ceil(problems.length / pageSize)}` });
+
+        pages.push(embed);
+      }
+
+      const pagination = new Pagination(interaction, pages);
+      pagination.setEmbeds(pages);
+      await pagination.send();
     },
 };
