@@ -1,3 +1,15 @@
+# [2.1.0](https://github.com/BYTE-Club-CCNY/Silvercord/compare/v2.0.1...v2.1.0) (2025-12-13)
+
+
+### Bug Fixes
+
+* add pagination to /problems ([#41](https://github.com/BYTE-Club-CCNY/Silvercord/issues/41)) ([881cb22](https://github.com/BYTE-Club-CCNY/Silvercord/commit/881cb223a1f256015d039bc2b01194c4ce23c15b))
+
+
+### Features
+
+* [#6](https://github.com/BYTE-Club-CCNY/Silvercord/issues/6) Allow creating threads when using /professor ([#37](https://github.com/BYTE-Club-CCNY/Silvercord/issues/37)) ([3a5fd6c](https://github.com/BYTE-Club-CCNY/Silvercord/commit/3a5fd6c006199cc53b67df9ae18f996b16fc79dc))
+
 ## [2.0.1](https://github.com/BYTE-Club-CCNY/Silvercord/compare/v2.0.0...v2.0.1) (2025-11-21)
 
 
