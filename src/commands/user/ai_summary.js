@@ -2,7 +2,6 @@ const { SlashCommandBuilder,EmbedBuilder, AttachmentBuilder } = require('discord
 const path = require('node:path');
 const { execFile } = require('child_process');
 const os = require('os');
-const { stdout } = require('node:process');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -63,20 +62,12 @@ module.exports = {
             console.error('Error fetching bottom message:', error);
         }
         
-        const total_messages = fetched_messages.length;
-        let response_content = `fetched ${total_messages} messages.`;
-        
-        if (total_messages === 0) {
-            response_content = `Could not find any messages.`;
-        }
-
         // turning it into a single string for use in gpt        
         const message_strings = fetched_messages.map(message => {
             return `[${message.createdAt.toISOString()}] ${message.author.tag}: ${message.content}`;
         }).filter(string => string.trim().length > 0); 
         const conversation_text = message_strings.join('\n');
 
-        // thanks jay
         const isWindows = os.platform() === 'win32';
         const venvSubPath = isWindows? 'Scripts/python.exe' : 'bin/python';
         const venvPath = path.resolve(__dirname, '../../../silvercord_agent/venv', venvSubPath);
@@ -99,7 +90,7 @@ module.exports = {
             const file = new AttachmentBuilder("./src/assets/chicken.png");
             const embed = new EmbedBuilder()
                 .setColor('#0099ff')
-                .setTitle("Conversation Summary")
+                .setTitle("Silvercord")
                 .setDescription(stdout)
                 .setThumbnail("attachment://chicken.png");
 

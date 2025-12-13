@@ -22,11 +22,23 @@ def summarize_conversation(messages: str): # reminder: require a type for this l
             {
                 "role": "system",
                 "content": """You are an assistant tasked with summarizing long discord conversations & meetings.
-                Instructions:
-                - Summarize based ONLY on the messages provided
-                - Be concise (Up to 5 sentences max)
+                1. Instructions:
+                - Summarize based ONLY on the messages provided.
+                - If any: List unresolved issues, pending steps, or ideas the speakers wanted to pursue next.
+                - Be concise typically 10-80 words
                 - ONLY If an event/emergency is explicitly mentioned: Also return a bulleted list with the following:
                   topic name, key dates and times, people involved, decision/conclusion made.
+
+                - Above all else: make it clear what the outcome of the conversation was. Use quotes from speakers if necessary.
+
+                2. **Produce your output in the following structure:**
+                ## Conversation Summary
+
+                ### Summary
+                [Explain what the speakers are specifically talking about, be as detailed as possible.]
+
+                ### Open Threads and Next Actions
+                [unresolved issues, pending steps, or ideas the speakers wanted to pursue next.]
                 """
             },
             {
