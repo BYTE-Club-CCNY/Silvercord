@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder, ThreadAutoArchiveDuration } = require('discord.js');
 const path = require('node:path');
 const { execFile } = require('child_process');
 const os = require('os');
@@ -10,11 +10,16 @@ module.exports = {
         .addStringOption(option => option
             .setName('professor')
             .setDescription('The name of the professor you want to know more about.')
-            .setRequired(true)),
+            .setRequired(true))
+		.addStringOption(option => option
+			.setName('begin_thread')
+			.setDescription('True or False')
+			.setRequired(false)),
         
     async execute(interaction) {
         if (!interaction.isChatInputCommand()) return;
         const profName = interaction.options.getString('professor') ?? 'No professor provided';
+        const beginThread = interaction.options.getString('begin_thread')?.toLowerCase() === 'true';
 
         await interaction.deferReply();
 
@@ -50,7 +55,20 @@ module.exports = {
                 embed.setURL(link);
             }
 
-            interaction.followUp({embeds: [ embed ], files: [ file ] });
+            interaction.followUp({embeds: [ embed ], files: [ file ] }).then(async () => {
+                if (beginThread && interaction.channel) {
+                    try {
+                        const thread = await interaction.channel.threads.create({
+                            name: `Discussion: Professor ${name}`,
+                            autoArchiveDuration: ThreadAutoArchiveDuration.OneHour,
+                            reason: `Thread created for discussion about ${name}`
+                        });
+                        await thread.send(`Discussion thread for ${name}. Feel free to ask questions or share experiences!`);
+                    } catch (error) {
+                        console.error('Error creating thread:', error);
+                    }
+                }
+            });
         });
     }
 };
