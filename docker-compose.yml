@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: ./api
+    container_name: silvercord-api
+    env_file:
+      - ./env           # optional shared vars
+      - ./api/.env.local
+    ports:
+      - "8080:8080"
+    restart: always
+
+  agent:
+    build:
+      context: ./silvercord_agent
+    container_name: silvercord-agent
+    env_file:
+      - ./env
+      - ./silvercord_agent/.env
+    depends_on:
+      - api
+    restart: always
+
+  discord-bot:
+    build:
+      context: .
+    container_name: silvercord-discord
+    env_file:
+      - ./env
+    depends_on:
+      - api
+    restart: always
+
