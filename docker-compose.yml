@@ -1,12 +1,10 @@
-version: "3.9"
-
+version: "3"
 services:
   api:
     build:
       context: ./api
     container_name: silvercord-api
     env_file:
-      - ./env           # optional shared vars
       - ./api/.env.local
     ports:
       - "8080:8080"
@@ -17,7 +15,6 @@ services:
       context: ./silvercord_agent
     container_name: silvercord-agent
     env_file:
-      - ./env
       - ./silvercord_agent/.env
     depends_on:
       - api
@@ -28,8 +25,26 @@ services:
       context: .
     container_name: silvercord-discord
     env_file:
-      - ./env
+      - ./.env
     depends_on:
       - api
     restart: always
+
+  discord-deploy:
+    build:
+      context: .
+    container_name: silvercord-discord-deploy
+    command: node src/deploy_commands.js
+    env_file:
+      - ./.env
+    restart: "no"
+
+  agent-setup:
+    build:
+      context: ./silvercord_agent
+    container_name: silvercord-agent-setup
+    command: python db_store.py
+    env_file:
+      - ./silvercord_agent/.env
+    restart: "no"
 

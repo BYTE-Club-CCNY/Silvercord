@@ -27,3 +27,6 @@ result
 .env.client
 chroma_db
 silvercord_agent/chroma_db
+
+# Envs
+**/.env

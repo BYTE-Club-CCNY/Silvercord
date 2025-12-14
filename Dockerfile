@@ -8,6 +8,7 @@ COPY package*.json ./
 RUN npm ci --omit=dev
 
 COPY src ./src
+COPY entrypoint.sh ./entrypoint.sh
 
-CMD ["node", "src/index.js"]
+CMD ["./entrypoint.sh"]
 
