@@ -1,3 +1,10 @@
+# [2.2.0](https://github.com/BYTE-Club-CCNY/Silvercord/compare/v2.1.0...v2.2.0) (2025-12-15)
+
+
+### Features
+
+* added chat-summary command ([5efcbe1](https://github.com/BYTE-Club-CCNY/Silvercord/commit/5efcbe1f079fafe1b8eb65c5f74ab68ce3dacb6e))
+
 # [2.1.0](https://github.com/BYTE-Club-CCNY/Silvercord/compare/v2.0.1...v2.1.0) (2025-12-13)
 
 
