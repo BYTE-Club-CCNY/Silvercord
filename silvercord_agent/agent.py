@@ -1,20 +1,19 @@
+import json
 import os
 import sys
-import json
+from difflib import SequenceMatcher
 
 import chromadb
 import cohere
+from db_store import process_professor
 from dotenv import load_dotenv
-from difflib import SequenceMatcher
 from openai import OpenAI
 from rmp import get_professor_url
-from db_store import process_professor
 
 load_dotenv()
 COHERE_KEY = os.getenv("COHERE_KEY")
 OPENAI_KEY = os.getenv("OPEN_AI_KEY")
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-CHROMA_DB_PATH = os.path.join(SCRIPT_DIR, "chroma_db")
+CHROMA_DB_PATH = os.getenv("CHROMA_DB_PATH")
 
 chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
 co = cohere.ClientV2(api_key=COHERE_KEY)
@@ -63,7 +62,7 @@ def fuzzy_match(query_name: str, stored_names: list, threshold: float = 0.7):
 
 
 def retrieve_data(query_in: str, prof_name_input: str, n_results: int = 10):
-    collection = chroma_client.get_collection("professor_reviews")
+    collection = chroma_client.get_or_create_collection("professor_reviews")
 
     try:
         data = collection.get(include=["metadatas"])

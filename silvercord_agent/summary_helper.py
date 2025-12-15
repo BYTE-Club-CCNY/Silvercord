@@ -2,12 +2,12 @@ import codecs
 import json
 import os
 import sys
+
 from dotenv import load_dotenv
 from openai import OpenAI
 
 load_dotenv()
 OPENAI_KEY = os.getenv("OPEN_AI_KEY")
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 oai = OpenAI(api_key=OPENAI_KEY)
 embedding_model = "embed-v4.0"

@@ -1,10 +1,10 @@
 from datetime import datetime
-from flask import Blueprint, request, jsonify
-from marshmallow import ValidationError
-from flasgger import swag_from
 
-from api.schemas import ProfessorRequestSchema, BreakRequestSchema
-from services.agent_service import get_professor_info, get_break_info
+from api.schemas import BreakRequestSchema, ProfessorRequestSchema
+from flasgger import swag_from
+from flask import Blueprint, jsonify, request
+from marshmallow import ValidationError
+from services.agent_service import get_break_info, get_professor_info
 from services.db_service import check_health
 
 api_bp = Blueprint('api', __name__)
@@ -97,7 +97,7 @@ def break_endpoint():
               type: string
               description: Academic year in format YYYY-YYYY
               example: "2025-2026"
-              pattern: ^\d{4}-\d{4}$
+              pattern: r"^\\d{4}-\\d{4}$"
     responses:
       200:
         description: Successfully retrieved calendar information

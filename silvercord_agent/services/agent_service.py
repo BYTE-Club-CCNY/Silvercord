@@ -51,7 +51,7 @@ def fuzzy_match(query_name: str, stored_names: list, threshold: float = 0.7):
 def retrieve_data(query_in: str, prof_name_input: str, n_results: int = 10):
     """Retrieve relevant professor reviews from ChromaDB using RAG."""
     chroma_client, cohere_client, _ = get_clients()
-    collection = chroma_client.get_collection("professor_reviews")
+    collection = chroma_client.get_or_create_collection("professor_reviews")
 
     try:
         data = collection.get(include=["metadatas"])

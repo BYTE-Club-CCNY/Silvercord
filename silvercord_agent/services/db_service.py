@@ -1,8 +1,9 @@
 import os
+
 import chromadb
 import cohere
-from openai import OpenAI
 from dotenv import load_dotenv
+from openai import OpenAI
 
 load_dotenv()
 
@@ -10,20 +11,26 @@ load_dotenv()
 _chroma_client = None
 _cohere_client = None
 _openai_client = None
+_professor_collection = None
 
 # Configuration
 COHERE_KEY = os.getenv("COHERE_KEY")
 OPENAI_KEY = os.getenv("OPEN_AI_KEY")
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-CHROMA_DB_PATH = os.path.join(os.path.dirname(SCRIPT_DIR), "chroma_db")
+CHROMA_DB_PATH = os.getenv("CHROMA_DB_PATH")
 
 
 def init_clients():
     """Initialize all clients (ChromaDB, Cohere, OpenAI) as singletons."""
-    global _chroma_client, _cohere_client, _openai_client
+    global _chroma_client, _cohere_client, _openai_client, _professor_collection
 
     if _chroma_client is None:
         _chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
+
+    if _professor_collection is None: 
+        _professor_collection = _chroma_client.get_or_create_collection(
+                name="professor_reviews",
+                metadata={"hnsw:space": "cosine"}
+        )
 
     if _cohere_client is None:
         if COHERE_KEY:

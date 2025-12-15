@@ -11,19 +11,19 @@ echo "Fetching latest changes from GitHub"
 git fetch && git reset origin/main --hard
 
 echo "Stopping all running containers"
-docker-compose down
+docker compose down
 
 echo "Rebuilding and starting services"
-docker-compose up -d --build
+docker compose up -d --build
 
 echo "Waiting for services to be healthy..."
 sleep 5
 
 echo "Deploying Discord commands"
-docker-compose run --rm discord-deploy
+docker compose run --rm discord-deploy
 
 echo "Checking service status"
-docker-compose ps
+docker compose ps
 
 echo "Deployment successful!"
 echo ""
