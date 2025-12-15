@@ -16,9 +16,20 @@ services:
     container_name: silvercord-agent
     env_file:
       - ./silvercord_agent/.env
+    ports:
+      - "5000:5000"
+    volumes:
+      - chroma-data:/app/chroma_db
     depends_on:
-      - api
+      api:
+        condition: service_started
     restart: always
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   discord-bot:
     build:
@@ -27,7 +38,10 @@ services:
     env_file:
       - ./.env
     depends_on:
-      - api
+      api:
+        condition: service_started
+      agent:
+        condition: service_healthy
     restart: always
 
   discord-deploy:
@@ -39,12 +53,6 @@ services:
       - ./.env
     restart: "no"
 
-  agent-setup:
-    build:
-      context: ./silvercord_agent
-    container_name: silvercord-agent-setup
-    command: python db_store.py
-    env_file:
-      - ./silvercord_agent/.env
-    restart: "no"
-
+volumes:
+  chroma-data:
+    driver: local

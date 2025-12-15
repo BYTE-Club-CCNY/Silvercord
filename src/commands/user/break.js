@@ -1,6 +1,4 @@
 const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
-const path = require('node:path');
-const { execFile } = require('child_process');
 require('dotenv').config();
 
 module.exports = {
@@ -14,39 +12,61 @@ module.exports = {
         
     async execute(interaction) {
         if (!interaction.isChatInputCommand()) return;
-        const query = interaction.options.getString('2024-2025') ?? 'No break provided';
+        const query = interaction.options.getString('2025-2026') ?? 'No break provided';
 
         await interaction.deferReply();
 
-        const venvPath = path.resolve(__dirname, '../../../silvercord_agent/venv/Scripts/python.exe');
-        const pythonScriptPath = path.resolve(__dirname, '../../../silvercord_agent/agent.py');
-        const break_string = "break"
+        const AGENT_API_URL = process.env.AGENT_API_URL;
 
-        execFile(venvPath, [pythonScriptPath, break_string, query], (error, stdout, stderr) => {
-            if (error) {
-                console.error("Error running LLM:", error);
-                interaction.followUp(`Failed to get information about ${query}.`);
+        if (!AGENT_API_URL) {
+            console.error("AGENT_API_URL environment variable is not set");
+            await interaction.followUp({
+                content: 'Configuration error: Agent API URL not set.',
+                ephemeral: true
+            });
+            return;
+        }
+
+        try {
+            const response = await fetch(`${AGENT_API_URL}/api/v1/break`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    year: query
+                }),
+                signal: AbortSignal.timeout(30000) // 30 second timeout
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error?.message || 'API request failed');
+            }
+
+            const { name, link, response: answerText } = await response.json();
+
+            if (link === null || link === "None") {
+                await interaction.followUp(answerText);
                 return;
             }
-            
-            if (stderr) {
-                console.error("Python script stderr:", stderr);
-            }
-            
-            const {name, link, response} = JSON.parse(stdout.trim());
-            if (link === "None") {
-                interaction.followUp(response);
-                return;
-            }
+
             const file = new AttachmentBuilder("./src/assets/calendar.jpg");
             const embed = new EmbedBuilder()
                 .setColor('#0099ff')
                 .setTitle(name)
                 .setURL(link)
-                .setDescription(response)
+                .setDescription(answerText)
                 .setThumbnail("attachment://calendar.jpg");
 
-            interaction.followUp({embeds: [ embed ], files: [ file ] });
-        });
+            await interaction.followUp({ embeds: [embed], files: [file] });
+
+        } catch (error) {
+            console.error("Error calling agent API:", error);
+            await interaction.followUp({
+                content: 'Failed to retrieve calendar information. Please try again later!',
+                ephemeral: true
+            });
+        }
     }
 };

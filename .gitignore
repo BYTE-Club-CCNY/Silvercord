@@ -11,6 +11,8 @@ __pycache__/
 *.pyc
 silvercord_agent/venv/
 silvercord_agent/.venv/
+.venv/
+venv/
 
 # Go
 *.exe
