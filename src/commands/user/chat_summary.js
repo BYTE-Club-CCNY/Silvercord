@@ -5,7 +5,7 @@ const os = require('os');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('ai-summary')
+        .setName('chat-summary')
         .setDescription('Summarizes the conversation between two given messages.')
         .addStringOption(option => option
             .setName('bottom-message')
