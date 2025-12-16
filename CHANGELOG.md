@@ -1,3 +1,11 @@
+## [3.0.1](https://github.com/BYTE-Club-CCNY/Silvercord/compare/v3.0.0...v3.0.1) (2025-12-16)
+
+
+### Bug Fixes
+
+* Hotfix to remove Discord commands deployment from script ([9717a45](https://github.com/BYTE-Club-CCNY/Silvercord/commit/9717a451411e09ec623f0760bfc52cc7173ce2bd))
+* hotfix to use expose instead of ports ([0da053a](https://github.com/BYTE-Club-CCNY/Silvercord/commit/0da053a1eaf6eaa43781df79e9b586944d550000))
+
 # [3.0.0](https://github.com/BYTE-Club-CCNY/Silvercord/compare/v2.2.0...v3.0.0) (2025-12-16)
 
 # [2.2.0](https://github.com/BYTE-Club-CCNY/Silvercord/compare/v2.1.0...v2.2.0) (2025-12-15)

@@ -1,6 +1,6 @@
 {
   "name": "silvercord",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Ask Silvercord anything about CUNY on your Discord server! Including: the academic schedule, upcoming or current professors, course material & how to best study for it, or upcoming courses to be opened or closed.",
   "main": "src/index.js",
   "scripts": {
