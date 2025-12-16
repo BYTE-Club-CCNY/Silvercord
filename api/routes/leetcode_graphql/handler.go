@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"log"
 	"main/routes/utils"
 	"net/http"
 	"strings"
@@ -20,6 +21,7 @@ const LEETCODE_GRAPHQL_URL = "https://leetcode.com/graphql"
 func (h *Handler) GetOnlineUsername(w http.ResponseWriter, r *http.Request) {
 	username := r.URL.Query().Get("username")
 	if username == "" {
+		log.Printf("[GetOnlineUsername] Missing username parameter")
 		utils.WriteInternalServerErrorResponse(w, "Username parameter required")
 		return
 	}
@@ -48,12 +50,14 @@ func (h *Handler) GetOnlineUsername(w http.ResponseWriter, r *http.Request) {
 
 	jsonData, err := json.Marshal(requestBody)
 	if err != nil {
+		log.Printf("[GetOnlineUsername] Failed to marshal request - username: %s, error: %v", username, err)
 		utils.WriteInternalServerErrorResponse(w, "Failed to create request")
 		return
 	}
 
 	resp, err := http.Post(LEETCODE_GRAPHQL_URL, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
+		log.Printf("[GetOnlineUsername] HTTP request failed - username: %s, error: %v", username, err)
 		utils.WriteInternalServerErrorResponse(w, "Request failed: "+err.Error())
 		return
 	}
@@ -61,17 +65,20 @@ func (h *Handler) GetOnlineUsername(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		log.Printf("[GetOnlineUsername] Failed to read response body - username: %s, error: %v", username, err)
 		utils.WriteInternalServerErrorResponse(w, "Failed to read response")
 		return
 	}
 
 	if resp.StatusCode != http.StatusOK {
+		log.Printf("[GetOnlineUsername] Non-OK status code - username: %s, status: %d, body: %s", username, resp.StatusCode, string(body))
 		utils.WriteInternalServerErrorResponse(w, "Error occurred: "+string(body))
 		return
 	}
 
 	var result GetOnlineUsernameResponse
 	if err := json.Unmarshal(body, &result); err != nil {
+		log.Printf("[GetOnlineUsername] Failed to unmarshal response - username: %s, error: %v", username, err)
 		utils.WriteInternalServerErrorResponse(w, "Failed to parse response")
 		return
 	}
@@ -82,12 +89,14 @@ func (h *Handler) GetOnlineUsername(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetDifficulty(w http.ResponseWriter, r *http.Request) {
 	link := r.URL.Query().Get("link")
 	if link == "" {
+		log.Printf("[GetDifficulty] Missing link parameter")
 		utils.WriteInternalServerErrorResponse(w, "Link parameter required")
 		return
 	}
 
 	parts := strings.Split(link, "/problems/")
 	if len(parts) < 2 {
+		log.Printf("[GetDifficulty] Invalid link format - link: %s", link)
 		utils.WriteInternalServerErrorResponse(w, "Invalid problem link format")
 		return
 	}
@@ -136,6 +145,7 @@ func (h *Handler) GetDifficulty(w http.ResponseWriter, r *http.Request) {
 
 	var result GetDifficultyResponse
 	if err := json.Unmarshal(body, &result); err != nil {
+		log.Printf("[GetDifficulty] Failed to unmarshal response - link: %s, error: %v", link, err)
 		utils.WriteInternalServerErrorResponse(w, "Failed to parse response")
 		return
 	}
@@ -146,6 +156,7 @@ func (h *Handler) GetDifficulty(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ExtractProblem(w http.ResponseWriter, r *http.Request) {
 	link := r.URL.Query().Get("link")
 	if link == "" {
+		log.Printf("[ExtractProblem] Missing link parameter")
 		utils.WriteInternalServerErrorResponse(w, "Link parameter required")
 		return
 	}

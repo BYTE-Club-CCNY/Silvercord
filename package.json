@@ -16,6 +16,8 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.699.0",
     "discord.js": "^14.25.1",
+    "@grpc/grpc-js": "^1.14.0",
+    "@grpc/proto-loader": "^0.8.0",
     "dotenv": "^16.4.5",
     "node-fetch": "^3.3.2",
     "nodemon": "^3.1.7",

@@ -2,7 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { Pagination } = require('pagination.djs');
 require('dotenv').config();
 
-const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8080';
+const API_BASE_URL = process.env.API_BASE_URL || 'http://api:8080';
 
 module.exports = {
     data: new SlashCommandBuilder()

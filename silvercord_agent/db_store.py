@@ -1,15 +1,15 @@
 import os
+import re
+
 import chromadb
-import requests
 import cohere
+import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-import re
 
 load_dotenv()
 COHERE_KEY = os.getenv("COHERE_KEY")
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-CHROMA_DB_PATH = os.path.join(SCRIPT_DIR, "chroma_db")
+CHROMA_DB_PATH = os.getenv("CHROMA_DB_PATH")
 chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
 co = cohere.ClientV2(api_key=COHERE_KEY)
 headers = {
@@ -94,10 +94,7 @@ def embed(content):
 
 
 def vector_store(embeddings_in, data_list, prof_id_in, prof_name_in):
-    try:
-        collection = chroma_client.create_collection(name="professor_reviews")
-    except Exception:
-        collection = chroma_client.get_collection(name="professor_reviews")
+    collection = chroma_client.get_or_create_collection(name="professor_reviews")
     
     existing = collection.get(
         where={"professor_id": prof_id_in},

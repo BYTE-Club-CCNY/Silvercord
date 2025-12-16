@@ -2,6 +2,7 @@ package problems
 
 import (
 	"encoding/json"
+	"log"
 	"strconv"
 
 	"main/routes/utils"
@@ -37,6 +38,7 @@ func (h *Handler) GetProblems(w http.ResponseWriter, r *http.Request) {
 		Eq("user_id", userID)
 	_, err := query.ExecuteTo(&rawProblems)
 	if err != nil {
+		log.Printf("[GetProblems] Query failed - serverID: %s, userID: %s, error: %v", serverID, userID, err)
 		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful")
 		return
 	}
@@ -57,11 +59,13 @@ func (h *Handler) AddProblem(w http.ResponseWriter, r *http.Request) {
 	var request AddProblemRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		log.Printf("[AddProblem] Failed to decode request body - error: %v", err)
 		utils.WriteInternalServerErrorResponse(w, "Invalid request body")
 		return
 	}
 
 	if err := validate.Struct(request); err != nil {
+		log.Printf("[AddProblem] Validation failed - error: %v", err)
 		utils.WriteInternalServerErrorResponse(w, "Invalid request body")
 		return
 	}
@@ -81,6 +85,7 @@ func (h *Handler) AddProblem(w http.ResponseWriter, r *http.Request) {
 	_, _, err := query.Execute()
 
 	if err != nil {
+		log.Printf("[AddProblem] Insert failed - serverID: %s, userID: %s, problem: %s, error: %v", request.ServerID, request.UserID, request.Problem, err)
 		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful")
 		return
 	}

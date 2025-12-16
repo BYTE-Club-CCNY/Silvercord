@@ -2,6 +2,7 @@ package scores
 
 import (
 	"encoding/json"
+	"log"
 	"main/routes/utils"
 	"net/http"
 	"strconv"
@@ -45,6 +46,7 @@ func (h *Handler) GetScore(w http.ResponseWriter, r *http.Request) {
 
 	_, err := query.ExecuteTo(&rawScores)
 	if err != nil {
+		log.Printf("[GetScore] Query failed - serverID: %s, userID: %s, season: %s, error: %v", serverID, userID, season, err)
 		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful")
 		return
 	}
@@ -73,11 +75,13 @@ func (h *Handler) UpdateScore(w http.ResponseWriter, r *http.Request) {
 	var request UpdateScoreRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		log.Printf("[UpdateScore] Failed to decode request body - error: %v", err)
 		utils.WriteInternalServerErrorResponse(w, "Invalid request body")
 		return
 	}
 
 	if err := validate.Struct(request); err != nil {
+		log.Printf("[UpdateScore] Validation failed - error: %v", err)
 		utils.WriteInternalServerErrorResponse(w, "Invalid request body")
 		return
 	}
@@ -102,6 +106,7 @@ func (h *Handler) UpdateScore(w http.ResponseWriter, r *http.Request) {
 	_, _, err := query.Execute()
 
 	if err != nil {
+		log.Printf("[UpdateScore] Upsert failed - serverID: %s, userID: %s, score: %d, error: %v", request.ServerID, request.UserID, request.Score, err)
 		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful: "+err.Error())
 		return
 	}
@@ -132,6 +137,7 @@ func (h *Handler) GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 
 	_, err := query.ExecuteTo(&rawScores)
 	if err != nil {
+		log.Printf("[GetLeaderboard] Query failed - serverID: %s, season: %s, error: %v", serverID, season, err)
 		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful: "+err.Error())
 		return
 	}

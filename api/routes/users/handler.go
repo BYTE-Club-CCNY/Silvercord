@@ -2,6 +2,7 @@ package users
 
 import (
 	"encoding/json"
+	"log"
 	"main/routes/utils"
 	"net/http"
 	"strconv"
@@ -35,6 +36,7 @@ func (h *Handler) GetUsername(w http.ResponseWriter, r *http.Request) {
 
 	_, err := query.ExecuteTo(&users)
 	if err != nil {
+		log.Printf("[GetUsername] Query failed - serverID: %s, userID: %s, error: %v", serverID, userID, err)
 		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful")
 		return
 	}
@@ -55,11 +57,13 @@ func (h *Handler) RegisterLCUser(w http.ResponseWriter, r *http.Request) {
 	var request RegisterLCUserRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		log.Printf("[RegisterLCUser] Failed to decode request body - error: %v", err)
 		utils.WriteInternalServerErrorResponse(w, "Invalid request body")
 		return
 	}
 
 	if err := validate.Struct(request); err != nil {
+		log.Printf("[RegisterLCUser] Validation failed - error: %v", err)
 		utils.WriteInternalServerErrorResponse(w, "Invalid request body")
 		return
 	}
@@ -78,6 +82,7 @@ func (h *Handler) RegisterLCUser(w http.ResponseWriter, r *http.Request) {
 	_, _, err := query.Execute()
 
 	if err != nil {
+		log.Printf("[RegisterLCUser] Upsert failed - serverID: %s, userID: %s, username: %s, error: %v", request.ServerID, request.UserID, request.Username, err)
 		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful")
 		return
 	}

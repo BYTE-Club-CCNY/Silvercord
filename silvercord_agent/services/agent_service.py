@@ -1,35 +1,22 @@
-import json
-import os
-import sys
+from datetime import datetime
 from difflib import SequenceMatcher
-
-import chromadb
-import cohere
-from db_store import process_professor
-from dotenv import load_dotenv
-from openai import OpenAI
+from services.db_service import get_clients
 from rmp import get_professor_url
+from db_store import process_professor
 
-load_dotenv()
-COHERE_KEY = os.getenv("COHERE_KEY")
-OPENAI_KEY = os.getenv("OPEN_AI_KEY")
-CHROMA_DB_PATH = os.getenv("CHROMA_DB_PATH")
-
-chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
-co = cohere.ClientV2(api_key=COHERE_KEY)
-oai = OpenAI(api_key=OPENAI_KEY)
 embedding_model = "embed-v4.0"
 
 
 def fuzzy_match(query_name: str, stored_names: list, threshold: float = 0.7):
-    '''
-    below tries to ensure to try to match for two cases:
-    user puts in full name: regular case, tries to match exact name
-    user puts in just 1 word (either first name or last name), and sequence matches with
-    each full name's first name then last name individually
-    EXAMPLE: query_name: Troeger; full_name in stored_names: Douglas Troeger -> MATCH
-    '''
+    """
+    Fuzzy match professor names to handle typos and partial matches.
 
+    Tries to match in two ways:
+    1. Full name exact match
+    2. Individual first/last name match
+
+    Example: query_name="Troeger" matches "Douglas Troeger"
+    """
     best_match = None
     best_score = 0
 
@@ -62,6 +49,8 @@ def fuzzy_match(query_name: str, stored_names: list, threshold: float = 0.7):
 
 
 def retrieve_data(query_in: str, prof_name_input: str, n_results: int = 10):
+    """Retrieve relevant professor reviews from ChromaDB using RAG."""
+    chroma_client, cohere_client, _ = get_clients()
     collection = chroma_client.get_or_create_collection("professor_reviews")
 
     try:
@@ -78,7 +67,7 @@ def retrieve_data(query_in: str, prof_name_input: str, n_results: int = 10):
     else:
         prof_name = None
 
-    embed_query = co.embed(
+    embed_query = cohere_client.embed(
         texts=[query_in],
         input_type="search_query",
         model=embedding_model,
@@ -97,6 +86,9 @@ def retrieve_data(query_in: str, prof_name_input: str, n_results: int = 10):
 
 
 def build_rag_response(query: str, professor: str):
+    """Build RAG response for professor query."""
+    _, _, openai_client = get_clients()
+
     results, matched_prof = retrieve_data(query, professor, n_results=8)
     professor_url = None
 
@@ -113,7 +105,7 @@ def build_rag_response(query: str, professor: str):
         for doc in results['documents'][0]
     ])
 
-    response = oai.chat.completions.create(
+    response = openai_client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {
@@ -139,40 +131,40 @@ def build_rag_response(query: str, professor: str):
     return response.choices[0].message.content, professor_url
 
 
-def demo():
-    # alternatively, run this locally to test out, commenting out what is under the main guard below
-    professor_demo = "Fazli"
-    question_demo = "How is his teaching style?"
+def get_professor_info(professor_name: str, question: str = "How is the following professor?"):
+    """
+    Get professor information using RAG.
 
-    answer_demo = build_rag_response(question_demo, professor_demo)
-    print(f"\nQuestion: {question_demo}")
-    print(f"Professor: {professor_demo}")
-    print(f"\nAnswer:\n{answer_demo}")
+    Args:
+        professor_name: Name of the professor
+        question: Query about the professor
+
+    Returns:
+        dict with name, link, response, processed_at
+    """
+    answer, professor_url = build_rag_response(question, professor_name)
+
+    return {
+        "name": professor_name,
+        "link": professor_url,
+        "response": answer,
+        "processed_at": datetime.utcnow().isoformat()
+    }
 
 
-if __name__ == "__main__":
-    answer = ""
-    question = ""
-    output = ""
-    command_arg = sys.argv[1]
-    if command_arg == "professor":
-        question = "How is the following professor?"
-        f_name = sys.argv[2]
-        s_name = ""
-        if len(sys.argv) > 3:
-            s_name = sys.argv[3]
-        full_name = f_name + " " + s_name
-        answer, originalUrl = build_rag_response(question, full_name)
-        output = {
-            "name": full_name,
-            "link": originalUrl,
-            "response": answer
-        }
-    elif command_arg == "break":
-        output = {
-            "name": "Calendar",
-            "link": "None",
-            "response": "This command is under maintenance. Stay tuned!"
-        }
-    print(json.dumps(output))
-    # demo()
+def get_break_info(year: str):
+    """
+    Get academic calendar break information.
+
+    Args:
+        year: Academic year (e.g., "2025-2026")
+
+    Returns:
+        dict with name, link, response, processed_at
+    """
+    return {
+        "name": "Calendar",
+        "link": None,
+        "response": "This command is under maintenance. Stay tuned!",
+        "processed_at": datetime.utcnow().isoformat()
+    }

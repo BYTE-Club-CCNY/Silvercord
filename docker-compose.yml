@@ -1,0 +1,56 @@
+services:
+  api:
+    build:
+      context: ./api
+    container_name: silvercord-api
+    env_file:
+      - ./api/.env.local
+    ports:
+      - "8080:8080"
+    restart: always
+
+  agent:
+    build:
+      context: ./silvercord_agent
+    container_name: silvercord-agent
+    env_file:
+      - ./silvercord_agent/.env
+    ports:
+      - "5000:5000"
+    volumes:
+      - chroma-data:/app/chroma_db
+    depends_on:
+      api:
+        condition: service_started
+    restart: always
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  discord-bot:
+    build:
+      context: .
+    container_name: silvercord-discord
+    env_file:
+      - ./.env
+    depends_on:
+      api:
+        condition: service_started
+      agent:
+        condition: service_healthy
+    restart: always
+
+  discord-deploy:
+    build:
+      context: .
+    container_name: silvercord-discord-deploy
+    command: node src/deploy_commands.js
+    env_file:
+      - ./.env
+    restart: "no"
+
+volumes:
+  chroma-data:

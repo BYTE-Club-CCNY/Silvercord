@@ -1,7 +1,4 @@
 const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder, ThreadAutoArchiveDuration } = require('discord.js');
-const path = require('node:path');
-const { execFile } = require('child_process');
-const os = require('os');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -23,52 +20,69 @@ module.exports = {
 
         await interaction.deferReply();
 
-        const isWindows = os.platform() === 'win32';
-        const venvSubPath = isWindows? 'Scripts/python.exe' : 'bin/python';
-        const venvPath = path.resolve(__dirname, '../../../silvercord_agent/venv', venvSubPath);
-        const pythonScriptPath = path.resolve(__dirname, '../../../silvercord_agent/agent.py');
-        const prof_string = "professor"
+        const AGENT_API_URL = process.env.AGENT_API_URL;
 
-        // example: `python3 ../agent.py professor Douglas Troeger
-        execFile(venvPath, [pythonScriptPath, prof_string, profName], (error, stdout, stderr) => {
-            if (error) {
-                console.error("Error running LLM:", error);
-                interaction.followUp(`Our agent is currently unavailable. Please try again later!`);
-                return;
+        if (!AGENT_API_URL) {
+            console.error("AGENT_API_URL environment variable is not set");
+            await interaction.followUp({
+                content: 'Configuration error: Agent API URL not set.',
+                ephemeral: true
+            });
+            return;
+        }
+
+        try {
+            const response = await fetch(`${AGENT_API_URL}/api/v1/professor`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    professor_name: profName,
+                    question: 'How is the following professor?'
+                }),
+                signal: AbortSignal.timeout(30000) // 30 second timeout
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error?.message || 'API request failed');
             }
 
-            if (stderr) {
-                console.error("Python script stderr:", stderr);
-                interaction.followUp(`Internal error retrieving info about Professor ${profName}.`);
-                return;
-            }
-            
-            const {name, link, response} = JSON.parse(stdout.trim());
+            const { name, link, response: answerText } = await response.json();
+
             const file = new AttachmentBuilder("./src/assets/chicken.png");
             const embed = new EmbedBuilder()
                 .setColor('#0099ff')
                 .setTitle(name)
-                .setDescription(response)
+                .setDescription(answerText)
                 .setThumbnail("attachment://chicken.png");
-            
+
             if (link !== null && link !== "None") {
                 embed.setURL(link);
             }
 
-            interaction.followUp({embeds: [ embed ], files: [ file ] }).then(async () => {
-                if (beginThread && interaction.channel) {
-                    try {
-                        const thread = await interaction.channel.threads.create({
-                            name: `Discussion: Professor ${name}`,
-                            autoArchiveDuration: ThreadAutoArchiveDuration.OneHour,
-                            reason: `Thread created for discussion about ${name}`
-                        });
-                        await thread.send(`Discussion thread for ${name}. Feel free to ask questions or share experiences!`);
-                    } catch (error) {
-                        console.error('Error creating thread:', error);
-                    }
+            await interaction.followUp({ embeds: [embed], files: [file] });
+
+            if (beginThread && interaction.channel) {
+                try {
+                    const thread = await interaction.channel.threads.create({
+                        name: `Discussion: Professor ${name}`,
+                        autoArchiveDuration: ThreadAutoArchiveDuration.OneHour,
+                        reason: `Thread created for discussion about ${name}`
+                    });
+                    await thread.send(`Discussion thread for ${name}. Feel free to ask questions or share experiences!`);
+                } catch (error) {
+                    console.error('Error creating thread:', error);
                 }
+            }
+
+        } catch (error) {
+            console.error("Error calling agent API:", error);
+            await interaction.followUp({
+                content: 'Our agent is currently unavailable. Please try again later!',
+                ephemeral: true
             });
-        });
+        }
     }
 };
