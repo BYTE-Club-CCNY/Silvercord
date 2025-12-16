@@ -19,9 +19,6 @@ docker compose up -d --build
 echo "Waiting for services to be healthy..."
 sleep 5
 
-echo "Deploying Discord commands"
-docker compose run --rm discord-deploy
-
 echo "Checking service status"
 docker compose ps
 
