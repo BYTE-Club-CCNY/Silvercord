@@ -32,3 +32,6 @@ silvercord_agent/chroma_db
 
 # Envs
 **/.env
+
+# Claude Code
+.claude/

@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 services:
   api:
     build:
@@ -40,3 +41,17 @@ services:
     
 volumes:
   chroma-data:
+||||||| Stash base
+=======
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+
+volumes:
+  redis-data:
+>>>>>>> Stashed changes
