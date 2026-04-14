@@ -1,6 +1,7 @@
 package problems
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log"
 	"strconv"
@@ -9,46 +10,46 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/supabase-community/supabase-go"
 )
 
 type Handler struct {
-	client *supabase.Client
+	db *sql.DB
 }
 
 var validate = validator.New()
 
-func NewHandler(client *supabase.Client) *Handler {
-	return &Handler{client: client}
+func NewHandler(db *sql.DB) *Handler {
+	return &Handler{db: db}
 }
 
 func (h *Handler) GetProblems(w http.ResponseWriter, r *http.Request) {
 	serverID := r.URL.Query().Get("server_id")
 	userID := r.URL.Query().Get("user_id")
 
-	var rawProblems []struct {
-		UserID  int64  `json:"user_id"`
-		Link    string `json:"link"`
-		Problem string `json:"problem"`
-	}
-
-	query := h.client.From(utils.LEETBOARD_PROBLEMS_TABLE).
-		Select("user_id, link, problem", "", false).
-		Eq("server_id", serverID).
-		Eq("user_id", userID)
-	_, err := query.ExecuteTo(&rawProblems)
+	rows, err := h.db.Query(
+		"SELECT user_id, link, problem FROM leetboard_problems WHERE server_id=? AND user_id=?",
+		serverID, userID,
+	)
 	if err != nil {
 		log.Printf("[GetProblems] Query failed - serverID: %s, userID: %s, error: %v", serverID, userID, err)
 		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful")
 		return
 	}
+	defer rows.Close()
 
 	var problems []GetProblemsResponse
-	for _, raw := range rawProblems {
+	for rows.Next() {
+		var userIDInt int64
+		var link, problem string
+		if err := rows.Scan(&userIDInt, &link, &problem); err != nil {
+			log.Printf("[GetProblems] Row scan failed - error: %v", err)
+			utils.WriteInternalServerErrorResponse(w, "Query unsuccessful")
+			return
+		}
 		problems = append(problems, GetProblemsResponse{
-			UserID:  strconv.FormatInt(raw.UserID, 10),
-			Link:    raw.Link,
-			Problem: raw.Problem,
+			UserID:  strconv.FormatInt(userIDInt, 10),
+			Link:    link,
+			Problem: problem,
 		})
 	}
 
@@ -73,17 +74,10 @@ func (h *Handler) AddProblem(w http.ResponseWriter, r *http.Request) {
 	serverIDInt, _ := strconv.ParseInt(request.ServerID, 10, 64)
 	userIDInt, _ := strconv.ParseInt(request.UserID, 10, 64)
 
-	insertData := map[string]interface{}{
-		"server_id": serverIDInt,
-		"user_id":   userIDInt,
-		"link":      request.Link,
-		"problem":   request.Problem,
-	}
-
-	query := h.client.From(utils.LEETBOARD_PROBLEMS_TABLE).
-		Insert(insertData, true, "server_id,user_id,problem", "representation", "")
-	_, _, err := query.Execute()
-
+	_, err := h.db.Exec(
+		"INSERT OR IGNORE INTO leetboard_problems (server_id, user_id, link, problem) VALUES (?, ?, ?, ?)",
+		serverIDInt, userIDInt, request.Link, request.Problem,
+	)
 	if err != nil {
 		log.Printf("[AddProblem] Insert failed - serverID: %s, userID: %s, problem: %s, error: %v", request.ServerID, request.UserID, request.Problem, err)
 		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful")

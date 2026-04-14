@@ -5,6 +5,10 @@ services:
     container_name: silvercord-api
     env_file:
       - ./api/.env.local
+    environment:
+      - DB_PATH=/app/data/silvercord.db
+    volumes:
+      - api-data:/app/data
     expose:
       - "8080"
     restart: always
@@ -37,6 +41,7 @@ services:
       agent:
         condition: service_healthy
     restart: always
-    
+
 volumes:
   chroma-data:
+  api-data:

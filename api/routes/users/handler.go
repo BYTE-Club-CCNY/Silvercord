@@ -1,6 +1,7 @@
 package users
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log"
 	"main/routes/utils"
@@ -8,48 +9,42 @@ import (
 	"strconv"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/supabase-community/supabase-go"
 )
 
 type Handler struct {
-	client *supabase.Client
+	db *sql.DB
 }
 
 var validate = validator.New()
 
-func NewHandler(client *supabase.Client) *Handler {
-	return &Handler{client: client}
+func NewHandler(db *sql.DB) *Handler {
+	return &Handler{db: db}
 }
 
 func (h *Handler) GetUsername(w http.ResponseWriter, r *http.Request) {
 	serverID := r.URL.Query().Get("server_id")
 	userID := r.URL.Query().Get("user_id")
 
-	var users []struct {
-		LeetcodeUsername string `json:"leetcode_username"`
+	var username string
+	err := h.db.QueryRow(
+		"SELECT leetcode_username FROM leetboard_username WHERE server_id=? AND user_id=?",
+		serverID, userID,
+	).Scan(&username)
+
+	if err == sql.ErrNoRows {
+		utils.WriteJSONResponse(w, GetUsernameResponse{
+			Username: "",
+		}, http.StatusOK)
+		return
 	}
-
-	query := h.client.From(utils.LEETBOARD_USERNAME_TABLE).
-		Select("leetcode_username", "", false).
-		Eq("server_id", serverID).
-		Eq("user_id", userID)
-
-	_, err := query.ExecuteTo(&users)
 	if err != nil {
 		log.Printf("[GetUsername] Query failed - serverID: %s, userID: %s, error: %v", serverID, userID, err)
 		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful")
 		return
 	}
 
-	if len(users) == 0 {
-		utils.WriteJSONResponse(w, GetUsernameResponse{
-			Username: "",
-		}, http.StatusOK)
-		return
-	}
-
 	utils.WriteJSONResponse(w, GetUsernameResponse{
-		Username: users[0].LeetcodeUsername,
+		Username: username,
 	}, http.StatusOK)
 }
 
@@ -71,16 +66,10 @@ func (h *Handler) RegisterLCUser(w http.ResponseWriter, r *http.Request) {
 	serverIDInt, _ := strconv.ParseInt(request.ServerID, 10, 64)
 	userIDInt, _ := strconv.ParseInt(request.UserID, 10, 64)
 
-	upsertData := map[string]interface{}{
-		"server_id":         serverIDInt,
-		"user_id":           userIDInt,
-		"leetcode_username": request.Username,
-	}
-
-	query := h.client.From(utils.LEETBOARD_USERNAME_TABLE).
-		Upsert(upsertData, "", "representation", "")
-	_, _, err := query.Execute()
-
+	_, err := h.db.Exec(
+		"INSERT OR REPLACE INTO leetboard_username (server_id, user_id, leetcode_username) VALUES (?, ?, ?)",
+		serverIDInt, userIDInt, request.Username,
+	)
 	if err != nil {
 		log.Printf("[RegisterLCUser] Upsert failed - serverID: %s, userID: %s, username: %s, error: %v", request.ServerID, request.UserID, request.Username, err)
 		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful")

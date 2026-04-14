@@ -1,0 +1,17 @@
+services:
+  discord-bot:
+    env_file:
+      - ./.env.staging
+  api:
+    env_file:
+      - ./api/.env.staging
+    volumes:
+      - staging-db:/app/data
+    environment:
+      - DB_PATH=/app/data/silvercord.db
+      - SEED_DB=true
+  agent:
+    env_file:
+      - ./silvercord_agent/.env
+volumes:
+  staging-db:
