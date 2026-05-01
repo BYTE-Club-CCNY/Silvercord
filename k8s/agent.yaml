@@ -46,14 +46,14 @@ spec:
               mountPath: /app/chroma_db
           readinessProbe:
             httpGet:
-              path: /health
+              path: /api/v1/health
               port: http
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 5
           livenessProbe:
             httpGet:
-              path: /health
+              path: /api/v1/health
               port: http
             initialDelaySeconds: 30
             periodSeconds: 30
