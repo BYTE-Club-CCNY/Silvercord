@@ -8,11 +8,21 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_OWNER: ${{ github.repository_owner }}
 
 jobs:
+  prep:
+    name: "Prep deploy variables"
+    runs-on: ubuntu-latest
+    outputs:
+      image_owner: ${{ steps.owner.outputs.image_owner }}
+    steps:
+      - id: owner
+        run: |
+          echo "image_owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
   build-and-push:
     name: "Build & Push (${{ matrix.service.name }})"
+    needs: prep
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -45,7 +55,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ matrix.service.image }}
+          images: ${{ env.REGISTRY }}/${{ needs.prep.outputs.image_owner }}/${{ matrix.service.image }}
           tags: |
             type=sha,format=short,prefix=
             type=raw,value=latest
@@ -81,6 +91,7 @@ jobs:
   deploy:
     name: "Deploy to k3s"
     needs:
+      - prep
       - build-and-push
       - register-commands
     runs-on: ubuntu-latest
@@ -174,9 +185,10 @@ jobs:
       - name: Roll deployments to new image tags
         run: |
           SHA="${{ steps.tag.outputs.sha }}"
-          AGENT_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/silvercord-agent:${SHA}"
-          API_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/silvercord-api:${SHA}"
-          BOT_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/silvercord-bot:${SHA}"
+          OWNER="${{ needs.prep.outputs.image_owner }}"
+          AGENT_IMAGE="${{ env.REGISTRY }}/${OWNER}/silvercord-agent:${SHA}"
+          API_IMAGE="${{ env.REGISTRY }}/${OWNER}/silvercord-api:${SHA}"
+          BOT_IMAGE="${{ env.REGISTRY }}/${OWNER}/silvercord-bot:${SHA}"
           ssh istaroth bash -s <<EOF
             export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
             kubectl -n silvercord set image deployment/agent agent=${AGENT_IMAGE}

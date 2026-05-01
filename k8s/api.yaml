@@ -23,7 +23,7 @@ spec:
       terminationGracePeriodSeconds: 15
       containers:
         - name: api
-          image: ghcr.io/dddictionary/silvercord-api:latest
+          image: ghcr.io/byte-club-ccny/silvercord-api:latest
           imagePullPolicy: Always
           ports:
             - name: http

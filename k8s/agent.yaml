@@ -33,7 +33,7 @@ spec:
       terminationGracePeriodSeconds: 15
       containers:
         - name: agent
-          image: ghcr.io/dddictionary/silvercord-agent:latest
+          image: ghcr.io/byte-club-ccny/silvercord-agent:latest
           imagePullPolicy: Always
           ports:
             - name: http

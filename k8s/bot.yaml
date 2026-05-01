@@ -31,7 +31,7 @@ spec:
               done
       containers:
         - name: bot
-          image: ghcr.io/dddictionary/silvercord-bot:latest
+          image: ghcr.io/byte-club-ccny/silvercord-bot:latest
           imagePullPolicy: Always
           envFrom:
             - secretRef:
