@@ -25,7 +25,7 @@ spec:
             - sh
             - -c
             - |
-              until curl -fsS http://agent.silvercord.svc.cluster.local:5000/health; do
+              until curl -fsS http://agent.silvercord.svc.cluster.local:5000/api/v1/health; do
                 echo "waiting for agent..."
                 sleep 3
               done
