@@ -1,33 +1,188 @@
-name: Deploy to DigitalOcean Droplet
+name: Deploy to k3s
 
 on:
   push:
     branches:
       - main
-
   workflow_dispatch:
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_OWNER: ${{ github.repository_owner }}
+
 jobs:
-  deploy:
-    name: "Deploy Silvercord to DigitalOcean"
+  build-and-push:
+    name: "Build & Push (${{ matrix.service.name }})"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        service:
+          - name: bot
+            context: .
+            image: silvercord-bot
+          - name: api
+            context: ./api
+            image: silvercord-api
+          - name: agent
+            context: ./silvercord_agent
+            image: silvercord-agent
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ matrix.service.image }}
+          tags: |
+            type=sha,format=short,prefix=
+            type=raw,value=latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.service.context }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha,scope=${{ matrix.service.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service.name }}
+
+  register-commands:
+    name: "Register Discord slash commands"
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Register global slash commands
+        run: npm run deploy
+        env:
+          TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
+
+  deploy:
+    name: "Deploy to k3s"
+    needs:
+      - build-and-push
+      - register-commands
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute short sha tag
+        id: tag
+        run: echo "sha=$(echo ${{ github.sha }} | cut -c1-7)" >> "$GITHUB_OUTPUT"
+
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
       - name: Configure SSH
         run: |
-          mkdir -p ~/.ssh/
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy-key.pem
-          chmod 600 ~/.ssh/deploy-key.pem
-          cat >> ~/.ssh/config <<END
-          Host droplet
-            HostName $SSH_IP
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          cat > ~/.ssh/config <<EOF
+          Host istaroth
+            HostName $SSH_HOST
             User $SSH_USER
-            IdentityFile ~/.ssh/deploy-key.pem
-            StrictHostKeyChecking no
-          END
+            IdentityFile ~/.ssh/id_ed25519
+            StrictHostKeyChecking accept-new
+          EOF
         env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_IP: ${{ secrets.SSH_IP }}
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Deploy Silvercord Discord Bot
-        run: ssh droplet '/root/Silvercord/redeploy.sh'
+      - name: Install kubectl on runner
+        uses: azure/setup-kubectl@v4
+
+      - name: Copy k8s manifests
+        run: |
+          ssh istaroth "mkdir -p /root/silvercord-k8s"
+          scp -r k8s/. istaroth:/root/silvercord-k8s/
+
+      - name: Apply namespace
+        run: |
+          ssh istaroth "KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubectl apply -f /root/silvercord-k8s/namespace.yaml"
+
+      - name: Apply bot-env secret
+        run: |
+          kubectl create secret generic bot-env \
+            -n silvercord \
+            --from-literal=TOKEN="$TOKEN" \
+            --from-literal=CLIENT_ID="$CLIENT_ID" \
+            --dry-run=client -o yaml \
+            | ssh istaroth "KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubectl apply -f -"
+        env:
+          TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
+
+      - name: Apply api-env secret
+        run: |
+          kubectl create secret generic api-env \
+            -n silvercord \
+            --from-literal=SUPABASE_URL_PRIVATE="$SUPABASE_URL_PRIVATE" \
+            --from-literal=SUPABASE_KEY_PRIVATE="$SUPABASE_KEY_PRIVATE" \
+            --dry-run=client -o yaml \
+            | ssh istaroth "KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubectl apply -f -"
+        env:
+          SUPABASE_URL_PRIVATE: ${{ secrets.SUPABASE_URL_PRIVATE }}
+          SUPABASE_KEY_PRIVATE: ${{ secrets.SUPABASE_KEY_PRIVATE }}
+
+      - name: Apply agent-env secret
+        run: |
+          kubectl create secret generic agent-env \
+            -n silvercord \
+            --from-literal=COHERE_KEY="$COHERE_KEY" \
+            --from-literal=OPEN_AI_KEY="$OPEN_AI_KEY" \
+            --from-literal=CHROMA_DB_PATH="/app/chroma_db" \
+            --dry-run=client -o yaml \
+            | ssh istaroth "KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubectl apply -f -"
+        env:
+          COHERE_KEY: ${{ secrets.COHERE_KEY }}
+          OPEN_AI_KEY: ${{ secrets.OPEN_AI_KEY }}
+
+      - name: Apply k8s manifests
+        run: |
+          ssh istaroth bash -s <<'EOF'
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            kubectl apply -k /root/silvercord-k8s/
+          EOF
+
+      - name: Roll deployments to new image tags
+        run: |
+          SHA="${{ steps.tag.outputs.sha }}"
+          AGENT_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/silvercord-agent:${SHA}"
+          API_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/silvercord-api:${SHA}"
+          BOT_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/silvercord-bot:${SHA}"
+          ssh istaroth bash -s <<EOF
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            kubectl -n silvercord set image deployment/agent agent=${AGENT_IMAGE}
+            kubectl -n silvercord set image deployment/api api=${API_IMAGE}
+            kubectl -n silvercord set image deployment/bot bot=${BOT_IMAGE}
+            kubectl -n silvercord rollout status deployment/agent --timeout=300s
+            kubectl -n silvercord rollout status deployment/api --timeout=300s
+            kubectl -n silvercord rollout status deployment/bot --timeout=300s
+          EOF
