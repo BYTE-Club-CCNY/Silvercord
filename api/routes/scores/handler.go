@@ -1,6 +1,7 @@
 package scores
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log"
 	"main/routes/utils"
@@ -8,18 +9,16 @@ import (
 	"strconv"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/supabase-community/postgrest-go"
-	"github.com/supabase-community/supabase-go"
 )
 
 type Handler struct {
-	client *supabase.Client
+	db *sql.DB
 }
 
 var validate = validator.New()
 
-func NewHandler(client *supabase.Client) *Handler {
-	return &Handler{client: client}
+func NewHandler(db *sql.DB) *Handler {
+	return &Handler{db: db}
 }
 
 func (h *Handler) GetScore(w http.ResponseWriter, r *http.Request) {
@@ -31,29 +30,18 @@ func (h *Handler) GetScore(w http.ResponseWriter, r *http.Request) {
 		season = utils.CURRENT_SEASON
 	}
 
-	var rawScores []struct {
-		ServerID int64 `json:"server_id"`
-		UserID   int64 `json:"user_id"`
-		Season   int   `json:"season"`
-		Score    int   `json:"score"`
-	}
+	var srvID int64
+	var uID int64
+	var seasonVal int
+	var score int
 
-	query := h.client.From(utils.LEETBOARD_SCORES_TABLE).
-		Select("server_id, user_id, season, score", "", false).
-		Eq("server_id", serverID).
-		Eq("user_id", userID).
-		Eq("season", season)
+	err := h.db.QueryRow(
+		"SELECT server_id, user_id, season, score FROM leetboard_scores WHERE server_id=? AND user_id=? AND season=?",
+		serverID, userID, season,
+	).Scan(&srvID, &uID, &seasonVal, &score)
 
-	_, err := query.ExecuteTo(&rawScores)
-	if err != nil {
-		log.Printf("[GetScore] Query failed - serverID: %s, userID: %s, season: %s, error: %v", serverID, userID, season, err)
-		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful")
-		return
-	}
-
-	if len(rawScores) == 0 {
+	if err == sql.ErrNoRows {
 		seasonInt, _ := strconv.Atoi(season)
-
 		utils.WriteJSONResponse(w, GetScoreResponse{
 			ServerID: serverID,
 			UserID:   userID,
@@ -62,12 +50,17 @@ func (h *Handler) GetScore(w http.ResponseWriter, r *http.Request) {
 		}, http.StatusOK)
 		return
 	}
+	if err != nil {
+		log.Printf("[GetScore] Query failed - serverID: %s, userID: %s, season: %s, error: %v", serverID, userID, season, err)
+		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful")
+		return
+	}
 
 	utils.WriteJSONResponse(w, GetScoreResponse{
-		ServerID: strconv.FormatInt(rawScores[0].ServerID, 10),
-		UserID:   strconv.FormatInt(rawScores[0].UserID, 10),
-		Season:   rawScores[0].Season,
-		Score:    rawScores[0].Score,
+		ServerID: strconv.FormatInt(srvID, 10),
+		UserID:   strconv.FormatInt(uID, 10),
+		Season:   seasonVal,
+		Score:    score,
 	}, http.StatusOK)
 }
 
@@ -90,21 +83,10 @@ func (h *Handler) UpdateScore(w http.ResponseWriter, r *http.Request) {
 	serverIDInt, _ := strconv.ParseInt(request.ServerID, 10, 64)
 	userIDInt, _ := strconv.ParseInt(request.UserID, 10, 64)
 
-	upsertData := map[string]interface{}{
-		"server_id": serverIDInt,
-		"user_id":   userIDInt,
-		"season":    currentSeason,
-		"score":     request.Score,
-	}
-
-	// NOTE, this must be within our constraints in the SQL table for the below to work on conflict:
-	// ALTER TABLE [table name here]
-	// ADD CONSTRAINT [constraint name here]
-	// UNIQUE ([rows here]);
-	query := h.client.From(utils.LEETBOARD_SCORES_TABLE).
-		Upsert(upsertData, "server_id, user_id, season", "", "")
-	_, _, err := query.Execute()
-
+	_, err := h.db.Exec(
+		"INSERT INTO leetboard_scores (server_id, user_id, season, score) VALUES (?, ?, ?, ?) ON CONFLICT(server_id, user_id, season) DO UPDATE SET score=?",
+		serverIDInt, userIDInt, currentSeason, request.Score, request.Score,
+	)
 	if err != nil {
 		log.Printf("[UpdateScore] Upsert failed - serverID: %s, userID: %s, score: %d, error: %v", request.ServerID, request.UserID, request.Score, err)
 		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful: "+err.Error())
@@ -122,30 +104,29 @@ func (h *Handler) GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 		season = utils.CURRENT_SEASON
 	}
 
-	var scores []LeaderboardRow
-
-	var rawScores []struct {
-		UserID int64 `json:"user_id"`
-		Score  int   `json:"score"`
-	}
-
-	query := h.client.From(utils.LEETBOARD_SCORES_TABLE).
-		Select("user_id, score", "", false).
-		Eq("server_id", serverID).
-		Eq("season", season).
-		Order("score", &postgrest.OrderOpts{Ascending: false})
-
-	_, err := query.ExecuteTo(&rawScores)
+	rows, err := h.db.Query(
+		"SELECT user_id, score FROM leetboard_scores WHERE server_id=? AND season=? ORDER BY score DESC",
+		serverID, season,
+	)
 	if err != nil {
 		log.Printf("[GetLeaderboard] Query failed - serverID: %s, season: %s, error: %v", serverID, season, err)
 		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful: "+err.Error())
 		return
 	}
+	defer rows.Close()
 
-	for _, raw := range rawScores {
+	var scores []LeaderboardRow
+	for rows.Next() {
+		var userID int64
+		var score int
+		if err := rows.Scan(&userID, &score); err != nil {
+			log.Printf("[GetLeaderboard] Row scan failed - error: %v", err)
+			utils.WriteInternalServerErrorResponse(w, "Query unsuccessful")
+			return
+		}
 		scores = append(scores, LeaderboardRow{
-			UserID: strconv.FormatInt(raw.UserID, 10),
-			Score:  raw.Score,
+			UserID: strconv.FormatInt(userID, 10),
+			Score:  score,
 		})
 	}
 

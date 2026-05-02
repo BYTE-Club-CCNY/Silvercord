@@ -3,31 +3,26 @@ package main
 import (
 	"fmt"
 	"log"
+	"main/db"
 	"main/routes"
 	"net/http"
 	"os"
-
-	"github.com/supabase-community/supabase-go"
 )
 
 func main() {
-	supabaseUrl := os.Getenv("SUPABASE_URL_PRIVATE")
-	supabaseAnonKey := os.Getenv("SUPABASE_KEY_PRIVATE")
+	database, err := db.Init()
+	if err != nil {
+		log.Fatal("[main] Error initializing database: ", err)
+	}
+	defer database.Close()
 
-	if supabaseUrl == "" || supabaseAnonKey == "" {
-		log.Fatal("[main] SUPABASE_URL_PRIVATE or SUPABASE_KEY_PRIVATE environment variables not set")
+	if os.Getenv("SEED_DB") == "true" {
+		if err := db.Seed(database); err != nil {
+			log.Fatal("[main] Error seeding database: ", err)
+		}
 	}
 
-	client, err2 := supabase.NewClient(
-		supabaseUrl,
-		supabaseAnonKey,
-		&supabase.ClientOptions{},
-	)
-	if err2 != nil {
-		log.Fatal("[main] Error creating Supabase client: ", err2)
-	}
-
-	r := routes.SetupRoutes(client)
+	r := routes.SetupRoutes(database)
 
 	fmt.Println("Listening on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", r))
