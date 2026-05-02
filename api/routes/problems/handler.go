@@ -5,26 +5,36 @@ import (
 	"log"
 	"strconv"
 
+	"main/cache"
 	"main/routes/utils"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/redis/go-redis/v9"
 	"github.com/supabase-community/supabase-go"
 )
 
 type Handler struct {
 	client *supabase.Client
+	rdb    *redis.Client
 }
 
 var validate = validator.New()
 
-func NewHandler(client *supabase.Client) *Handler {
-	return &Handler{client: client}
+func NewHandler(client *supabase.Client, rdb *redis.Client) *Handler {
+	return &Handler{client: client, rdb: rdb}
 }
 
 func (h *Handler) GetProblems(w http.ResponseWriter, r *http.Request) {
 	serverID := r.URL.Query().Get("server_id")
 	userID := r.URL.Query().Get("user_id")
+
+	// Check cache
+	key := cache.ProblemsKey(serverID, userID)
+	if cached, ok := cache.GetJSON[[]GetProblemsResponse](r.Context(), h.rdb, key); ok {
+		utils.WriteJSONResponse(w, cached, http.StatusOK)
+		return
+	}
 
 	var rawProblems []struct {
 		UserID  int64  `json:"user_id"`
@@ -52,6 +62,7 @@ func (h *Handler) GetProblems(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
+	cache.SetJSON(r.Context(), h.rdb, key, problems, cache.ProblemsTTL)
 	utils.WriteJSONResponse(w, problems, http.StatusOK)
 }
 
@@ -89,6 +100,9 @@ func (h *Handler) AddProblem(w http.ResponseWriter, r *http.Request) {
 		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful")
 		return
 	}
+
+	// Invalidate cache
+	cache.Delete(r.Context(), h.rdb, cache.ProblemsKey(request.ServerID, request.UserID))
 
 	utils.WriteSuccessResponse(w, "Success")
 }

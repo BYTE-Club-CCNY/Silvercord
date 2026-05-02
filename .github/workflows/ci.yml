@@ -19,3 +19,14 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run lint
+
+  api-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: api/go.mod
+          cache-dependency-path: api/go.sum
+      - run: go test ./test/...
+        working-directory: api

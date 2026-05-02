@@ -3,23 +3,26 @@ package scores
 import (
 	"encoding/json"
 	"log"
+	"main/cache"
 	"main/routes/utils"
 	"net/http"
 	"strconv"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/redis/go-redis/v9"
 	"github.com/supabase-community/postgrest-go"
 	"github.com/supabase-community/supabase-go"
 )
 
 type Handler struct {
 	client *supabase.Client
+	rdb    *redis.Client
 }
 
 var validate = validator.New()
 
-func NewHandler(client *supabase.Client) *Handler {
-	return &Handler{client: client}
+func NewHandler(client *supabase.Client, rdb *redis.Client) *Handler {
+	return &Handler{client: client, rdb: rdb}
 }
 
 func (h *Handler) GetScore(w http.ResponseWriter, r *http.Request) {
@@ -29,6 +32,13 @@ func (h *Handler) GetScore(w http.ResponseWriter, r *http.Request) {
 
 	if season == "" {
 		season = utils.CURRENT_SEASON
+	}
+
+	// Check cache
+	key := cache.ScoreKey(serverID, userID, season)
+	if cached, ok := cache.GetJSON[GetScoreResponse](r.Context(), h.rdb, key); ok {
+		utils.WriteJSONResponse(w, cached, http.StatusOK)
+		return
 	}
 
 	var rawScores []struct {
@@ -51,24 +61,26 @@ func (h *Handler) GetScore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var response GetScoreResponse
 	if len(rawScores) == 0 {
 		seasonInt, _ := strconv.Atoi(season)
-
-		utils.WriteJSONResponse(w, GetScoreResponse{
+		response = GetScoreResponse{
 			ServerID: serverID,
 			UserID:   userID,
 			Season:   seasonInt,
 			Score:    0,
-		}, http.StatusOK)
-		return
+		}
+	} else {
+		response = GetScoreResponse{
+			ServerID: strconv.FormatInt(rawScores[0].ServerID, 10),
+			UserID:   strconv.FormatInt(rawScores[0].UserID, 10),
+			Season:   rawScores[0].Season,
+			Score:    rawScores[0].Score,
+		}
 	}
 
-	utils.WriteJSONResponse(w, GetScoreResponse{
-		ServerID: strconv.FormatInt(rawScores[0].ServerID, 10),
-		UserID:   strconv.FormatInt(rawScores[0].UserID, 10),
-		Season:   rawScores[0].Season,
-		Score:    rawScores[0].Score,
-	}, http.StatusOK)
+	cache.SetJSON(r.Context(), h.rdb, key, response, cache.ScoreTTL)
+	utils.WriteJSONResponse(w, response, http.StatusOK)
 }
 
 func (h *Handler) UpdateScore(w http.ResponseWriter, r *http.Request) {
@@ -97,10 +109,6 @@ func (h *Handler) UpdateScore(w http.ResponseWriter, r *http.Request) {
 		"score":     request.Score,
 	}
 
-	// NOTE, this must be within our constraints in the SQL table for the below to work on conflict:
-	// ALTER TABLE [table name here]
-	// ADD CONSTRAINT [constraint name here]
-	// UNIQUE ([rows here]);
 	query := h.client.From(utils.LEETBOARD_SCORES_TABLE).
 		Upsert(upsertData, "server_id, user_id, season", "", "")
 	_, _, err := query.Execute()
@@ -111,6 +119,12 @@ func (h *Handler) UpdateScore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Invalidate score and leaderboard cache
+	cache.Delete(r.Context(), h.rdb,
+		cache.ScoreKey(request.ServerID, request.UserID, utils.CURRENT_SEASON),
+		cache.LeaderboardKey(request.ServerID, utils.CURRENT_SEASON),
+	)
+
 	utils.WriteSuccessResponse(w, "Success")
 }
 
@@ -120,6 +134,13 @@ func (h *Handler) GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 
 	if season == "" {
 		season = utils.CURRENT_SEASON
+	}
+
+	// Check cache
+	key := cache.LeaderboardKey(serverID, season)
+	if cached, ok := cache.GetJSON[[]LeaderboardRow](r.Context(), h.rdb, key); ok {
+		utils.WriteJSONResponse(w, cached, http.StatusOK)
+		return
 	}
 
 	var scores []LeaderboardRow
@@ -149,5 +170,6 @@ func (h *Handler) GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
+	cache.SetJSON(r.Context(), h.rdb, key, scores, cache.LeaderboardTTL)
 	utils.WriteJSONResponse(w, scores, http.StatusOK)
 }

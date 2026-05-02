@@ -3,27 +3,37 @@ package users
 import (
 	"encoding/json"
 	"log"
+	"main/cache"
 	"main/routes/utils"
 	"net/http"
 	"strconv"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/redis/go-redis/v9"
 	"github.com/supabase-community/supabase-go"
 )
 
 type Handler struct {
 	client *supabase.Client
+	rdb    *redis.Client
 }
 
 var validate = validator.New()
 
-func NewHandler(client *supabase.Client) *Handler {
-	return &Handler{client: client}
+func NewHandler(client *supabase.Client, rdb *redis.Client) *Handler {
+	return &Handler{client: client, rdb: rdb}
 }
 
 func (h *Handler) GetUsername(w http.ResponseWriter, r *http.Request) {
 	serverID := r.URL.Query().Get("server_id")
 	userID := r.URL.Query().Get("user_id")
+
+	// Check cache
+	key := cache.UsernameKey(serverID, userID)
+	if cached, ok := cache.GetJSON[GetUsernameResponse](r.Context(), h.rdb, key); ok {
+		utils.WriteJSONResponse(w, cached, http.StatusOK)
+		return
+	}
 
 	var users []struct {
 		LeetcodeUsername string `json:"leetcode_username"`
@@ -41,16 +51,15 @@ func (h *Handler) GetUsername(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var response GetUsernameResponse
 	if len(users) == 0 {
-		utils.WriteJSONResponse(w, GetUsernameResponse{
-			Username: "",
-		}, http.StatusOK)
-		return
+		response = GetUsernameResponse{Username: ""}
+	} else {
+		response = GetUsernameResponse{Username: users[0].LeetcodeUsername}
 	}
 
-	utils.WriteJSONResponse(w, GetUsernameResponse{
-		Username: users[0].LeetcodeUsername,
-	}, http.StatusOK)
+	cache.SetJSON(r.Context(), h.rdb, key, response, cache.UsernameTTL)
+	utils.WriteJSONResponse(w, response, http.StatusOK)
 }
 
 func (h *Handler) RegisterLCUser(w http.ResponseWriter, r *http.Request) {
@@ -86,6 +95,9 @@ func (h *Handler) RegisterLCUser(w http.ResponseWriter, r *http.Request) {
 		utils.WriteInternalServerErrorResponse(w, "Query unsuccessful")
 		return
 	}
+
+	// Invalidate cache
+	cache.Delete(r.Context(), h.rdb, cache.UsernameKey(request.ServerID, request.UserID))
 
 	utils.WriteSuccessResponse(w, "Success")
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"main/cache"
 	"main/routes"
 	"net/http"
 	"os"
@@ -27,7 +28,8 @@ func main() {
 		log.Fatal("[main] Error creating Supabase client: ", err2)
 	}
 
-	r := routes.SetupRoutes(client)
+	rdb := cache.NewRedisClient()
+	r := routes.SetupRoutes(client, rdb)
 
 	fmt.Println("Listening on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", r))
